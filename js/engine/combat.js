@@ -64,6 +64,19 @@ window.Combat = (() => {
     _phase = 'PLAYER_TURN';
     _turnCount++;
     window.GameEngine.emit('turnStart', { turn: _turnCount });
+    // Process regen buffs
+    const s2 = window.GameEngine.getState();
+    if (s2.buffs && s2.buffs.length > 0) {
+      const remaining = [];
+      for (const b of s2.buffs) {
+        if (b.type === 'regen') {
+          s2.hp = Math.min(s2.maxHp, s2.hp + b.value);
+          b.turns--;
+          if (b.turns > 0) remaining.push(b);
+        } else { remaining.push(b); }
+      }
+      s2.buffs = remaining;
+    }
     window.Deck.drawCards(3);
   }
 
@@ -342,7 +355,7 @@ window.Combat = (() => {
     if (card.casts !== undefined && card.casts > 1) {
       card.casts--;
       // Card stays in hand (don't discard)
-      if (card.casts <= 1) {
+      if (card.casts <= 0) {
         state.hand.splice(cardIndex, 1);
         state.discardPile.push(card);
       }

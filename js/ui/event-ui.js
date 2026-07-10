@@ -1,4 +1,4 @@
-// 暗黑地牢卡牌爬塔 — 事件/商店/休息UI
+﻿// 暗黑地牢卡牌爬塔 — 事件/商店/休息UI
 window.EventUI = (() => {
   async function showEvent() {
     const state = window.GameEngine.getState();
@@ -96,12 +96,12 @@ window.EventUI = (() => {
           <h2>商店</h2>
           <p style="color:var(--text-dim)">以血换物</p>
           <div class="picker-options">
-            <button id="shop-card">普通卡牌 — 15 HP</button>
-            <button id="shop-rare">稀有卡牌 — 30 HP</button>
-            <button id="shop-potion">药水 — 10 HP</button>
-            <button id="shop-relic">普通遗物 — 40 HP</button>
-            <button id="shop-rare-relic">稀有遗物 — 60 HP</button>
-            <button id="shop-remove">移除一张牌 — 25 HP</button>
+            <button id="shop-card" ${state.hp < 15 ? "disabled" : ""}>普通卡牌 — 15 HP${state.hp < 15 ? " (HP不足)" : ""}</button>
+            <button id="shop-rare" ${state.hp < 30 ? "disabled" : ""}>稀有卡牌 — 30 HP${state.hp < 30 ? " (HP不足)" : ""}</button>
+            <button id="shop-potion" ${state.hp < 10 ? "disabled" : ""}>药水 — 10 HP${state.hp < 10 ? " (HP不足)" : ""}</button>
+            <button id="shop-relic" ${state.hp < 40 ? "disabled" : ""}>普通遗物 — 40 HP${state.hp < 40 ? " (HP不足)" : ""}</button>
+            <button id="shop-rare-relic" ${state.hp < 60 ? "disabled" : ""}>稀有遗物 — 60 HP${state.hp < 60 ? " (HP不足)" : ""}</button>
+            <button id="shop-remove" ${state.hp < 25 || window.Deck.getDeckSize() <= 5 ? "disabled" : ""}>移除一张牌 — 25 HP${state.hp < 25 ? " (HP不足)" : window.Deck.getDeckSize() <= 5 ? " (牌组最小5张)" : ""}</button>
             <button id="shop-leave">离开</button>
           </div>
         </div>
@@ -201,3 +201,4 @@ window.EventUI = (() => {
 
   return { showEvent, showShop, showRest, showCurseEvent, executeEventEffects };
 })();
+

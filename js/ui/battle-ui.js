@@ -1,4 +1,4 @@
-// 暗黑地牢卡牌爬塔 — 战斗UI (含动画+描述)
+﻿// 暗黑地牢卡牌爬塔 — 战斗UI (含动画+描述)
 window.BattleUI = (() => {
   let selectedCardIndex = null;
 
@@ -244,3 +244,4 @@ window.BattleUI = (() => {
 
   return { show, refresh };
 })();
+
