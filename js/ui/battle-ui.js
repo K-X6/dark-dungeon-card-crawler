@@ -1,10 +1,9 @@
-﻿// 暗黑地牢卡牌爬塔 — 战斗UI
+// 暗黑地牢卡牌爬塔 — 战斗UI (含动画+描述)
 window.BattleUI = (() => {
   let selectedCardIndex = null;
 
   function show() {
     const state = window.GameEngine.getState();
-    const app = document.getElementById('app');
     render(state);
     showMulligan(state);
   }
@@ -27,10 +26,10 @@ window.BattleUI = (() => {
 
         <div class="enemy-area">
           ${enemies.map((e, i) => `
-            <div class="enemy-card ${e.hp <= 0 ? 'hidden' : ''}" data-enemy="${i}" id="enemy-${i}">
-              <h3>${e.name}</h3>
+            <div class="enemy-card ${e.hp <= 0 ? 'dying' : ''}" data-enemy="${i}" id="enemy-${i}">
+              <h3>${e.name}${e.variation ? ' ['+e.variation+']' : ''}</h3>
               <div>HP ${e.hp}/${e.maxHp}</div>
-              <div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:${e.hp/e.maxHp*100}%"></div></div>
+              <div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:${Math.max(0,e.hp/e.maxHp*100)}%"></div></div>
               ${e.poison > 0 ? `<div style="color:#2ecc71">☠ ${e.poison}</div>` : ''}
               ${e.burn > 0 ? `<div style="color:#e67e22">🔥 ${e.burn}</div>` : ''}
               <div class="enemy-intent">
@@ -58,7 +57,6 @@ window.BattleUI = (() => {
       </div>
     `;
 
-    // Click handlers
     document.querySelectorAll('.card:not(.curse):not(.disabled)').forEach(cardEl => {
       cardEl.addEventListener('click', () => {
         const idx = parseInt(cardEl.dataset.index);
@@ -71,13 +69,27 @@ window.BattleUI = (() => {
       });
     });
 
-    document.querySelectorAll('.enemy-card').forEach(enemyEl => {
+    document.querySelectorAll('.enemy-card:not(.dying)').forEach(enemyEl => {
       enemyEl.addEventListener('click', () => {
         if (selectedCardIndex === null) return;
         const enemyIdx = parseInt(enemyEl.dataset.enemy);
+        const cardEl = document.querySelector('.card.selected');
+        if (cardEl) cardEl.classList.add('played');
+        const energyEl = document.querySelector('.energy-value');
+        if (energyEl) { energyEl.classList.add('pulse'); setTimeout(() => energyEl.classList.remove('pulse'), 300); }
         window.Combat.playCard(selectedCardIndex, enemyIdx);
+        if (enemyEl) {
+          const rect = enemyEl.getBoundingClientRect();
+          const card = window.GameEngine.getState().hand[selectedCardIndex];
+          if (card && card.effects) {
+            const dmgEff = card.effects.find(e => e.type === 'damage' || e.type === 'aoeDamage');
+            if (dmgEff) showFloatText(rect.left + rect.width/2, rect.top, '-'+window.Combat.calcDamage(dmgEff.value), 'damage');
+          }
+          enemyEl.classList.add('hit');
+          setTimeout(() => enemyEl.classList.remove('hit'), 300);
+        }
         selectedCardIndex = null;
-        refresh();
+        setTimeout(() => refresh(), 200);
       });
     });
 
@@ -104,8 +116,9 @@ window.BattleUI = (() => {
     const cost = window.Deck.getCardCost(card);
     const canPlay = state.energy >= cost && card.type !== 'curse';
     const cls = card.type === 'curse' ? 'card curse' : canPlay ? 'card' : 'card disabled';
+    const desc = describeCard(card);
     return `
-      <div class="${cls}" data-index="${index}">
+      <div class="${cls}" data-index="${index}" title="${desc}">
         <div class="card-cost">${cost}</div>
         <div class="card-name">${card.name}</div>
         <div class="card-type">${card.type}</div>
@@ -116,39 +129,80 @@ window.BattleUI = (() => {
 
   function describeEffects(effects) {
     if (!effects) return '';
-    return effects.map(e => {
-      if (e.type === 'damage') return `⚔${e.value}`;
-      if (e.type === 'aoeDamage') return `💥${e.value}`;
-      if (e.type === 'armor') return `🛡${e.value}`;
-      if (e.type === 'poison') return `☠${e.layers}`;
-      if (e.type === 'draw') return `📜${e.count}`;
-      if (e.type === 'strength') return `💪${e.value}`;
-      return '';
-    }).join(' ');
+    const labels = [];
+    for (const e of effects) {
+      if (e.type === 'damage') labels.push('⚔'+e.value);
+      else if (e.type === 'aoeDamage') labels.push('💥'+e.value);
+      else if (e.type === 'armor') labels.push('🛡'+e.value);
+      else if (e.type === 'poison' || e.type === 'aoePoison') labels.push('☠'+(e.layers||''));
+      else if (e.type === 'burn') labels.push('🔥'+(e.layers||''));
+      else if (e.type === 'draw') labels.push('📜'+e.count);
+      else if (e.type === 'strength') labels.push('💪'+e.value);
+      else if (e.type === 'weak') labels.push('💤'+(e.turns||''));
+      else if (e.type === 'stun') labels.push('⏸');
+      else if (e.type === 'chain') labels.push('⚡'+e.value);
+      else if (e.type === 'retainArmor') labels.push('🔒');
+      else if (e.type === 'nextTurnEnergy') labels.push('⏳+'+e.value);
+      else if (e.type === 'poisonDamage') labels.push('☠x'+(e.multiplier||2));
+      else if (e.type === 'execute') labels.push('🗡');
+      else if (e.type === 'bonusOnPoison') labels.push('☠+'+e.value);
+      else if (e.type === 'perPoisonDamage') labels.push('☠x'+e.value);
+    }
+    return labels.join(' ');
+  }
+
+  function describeCard(card) {
+    if (!card.effects) return '';
+    const parts = [];
+    for (const e of card.effects) {
+      if (e.type === 'damage') parts.push('造成 '+e.value+' 伤害');
+      else if (e.type === 'aoeDamage') parts.push('全体 '+e.value+' 伤害');
+      else if (e.type === 'armor') parts.push('获得 '+e.value+' 护甲');
+      else if (e.type === 'poison') parts.push('施加 '+e.layers+' 层中毒');
+      else if (e.type === 'burn') parts.push('施加 '+e.layers+' 层灼烧');
+      else if (e.type === 'draw') parts.push('抽 '+e.count+' 张牌');
+      else if (e.type === 'strength') parts.push('力量 +'+e.value);
+      else if (e.type === 'weak') parts.push('虚弱 '+(e.turns||1)+' 回合');
+      else if (e.type === 'stun') parts.push('眩晕敌人');
+      else if (e.type === 'energy') parts.push('能量 +'+e.value);
+      else if (e.type === 'heal') parts.push('回复 '+e.value+' HP');
+      else if (e.type === 'chain') parts.push('弹射 '+e.value);
+      else if (e.type === 'retainArmor') parts.push('护甲保留');
+      else if (e.type === 'nextTurnEnergy') parts.push('下回合 +'+e.value+'能量');
+      else if (e.type === 'extraTurn') parts.push('额外一个回合');
+      else if (e.type === 'execute') parts.push('HP<50%时 '+e.value+'伤害');
+      else if (e.type === 'duplicate') parts.push('复制一张0费版');
+    }
+    return parts.join('，');
   }
 
   function getIntentIcon(enemy) {
     const intent = enemy.intents?.[enemy.intentIndex % enemy.intents.length] || '';
-    if (intent.startsWith('attack')) return '⚔';
+    if (intent.startsWith('attack') || intent === 'lifestealAttack') return '⚔';
     if (intent.startsWith('defend')) return '🛡';
     if (intent.startsWith('strengthen')) return '⬆';
-    if (intent.startsWith('summon')) return '💀';
+    if (intent === 'summon') return '💀';
+    if (intent.startsWith('heal')) return '❤';
+    if (intent.startsWith('apply') || intent.startsWith('aoePoison')) return '🔮';
+    if (intent === 'charge') return '⚡';
+    if (intent === 'ultimate') return '☠';
+    if (intent === 'aoe') return '💥';
     return '❓';
   }
 
   function getIntentText(enemy) {
     const intent = enemy.intents?.[enemy.intentIndex % enemy.intents.length] || '';
     const dmg = enemy.damage;
-    if (intent === 'attack') return '\u4F24\u5BB3 ' + dmg;
-    if (intent.startsWith('defend')) return '\u9632\u5FA1';
-    if (intent.startsWith('strengthen')) return '\u5F3A\u5316';
-    if (intent === 'summon') return '\u53EC\u5524';
-    if (intent.startsWith('heal')) return '\u56DE\u590D';
-    if (intent.startsWith('apply') || intent.startsWith('aoePoison')) return '\u6CD5\u672F';
-    if (intent === 'charge') return '\u84C4\u529B';
-    if (intent === 'ultimate') return '\u5FC5\u6740\u6280';
-    if (intent === 'aoe') return '\u5168\u4F53\u653B\u51FB';
-    if (intent === 'lifestealAttack') return '\u5438\u8840 ' + dmg;
+    if (intent === 'attack') return '伤害 ' + dmg;
+    if (intent.startsWith('defend')) return '防御';
+    if (intent.startsWith('strengthen')) return '强化';
+    if (intent === 'summon') return '召唤';
+    if (intent.startsWith('heal')) return '回复';
+    if (intent.startsWith('apply') || intent.startsWith('aoePoison')) return '法术';
+    if (intent === 'charge') return '蓄力';
+    if (intent === 'ultimate') return '必杀技';
+    if (intent === 'aoe') return '全体攻击';
+    if (intent === 'lifestealAttack') return '吸血 ' + dmg;
     return intent;
   }
 
@@ -166,8 +220,7 @@ window.BattleUI = (() => {
       <button id="btn-mulligan">换牌</button>
     `;
     document.body.appendChild(overlay);
-
-    document.getElementById('btn-keep').addEventListener('click', () => { overlay.remove(); });
+    document.getElementById('btn-keep').addEventListener('click', () => overlay.remove());
     document.getElementById('btn-mulligan').addEventListener('click', () => {
       const st = window.GameEngine.getState();
       st.discardPile.push(...st.hand);
@@ -178,10 +231,16 @@ window.BattleUI = (() => {
     });
   }
 
-  function refresh() {
-    render(window.GameEngine.getState());
+  function showFloatText(x, y, text, cls) {
+    const el = document.createElement('div');
+    el.className = 'float-text ' + (cls || 'damage');
+    el.textContent = text;
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
   }
+
+  function refresh() { render(window.GameEngine.getState()); }
 
   return { show, refresh };
 })();
-
