@@ -44,6 +44,11 @@ window.Combat = (() => {
     state.energy = state.maxEnergy;
     _phase = 'ENEMY_TURN';
     executeEnemyTurn();
+    // Check if all enemies are dead
+    if (_enemies.every(e => e.hp <= 0)) {
+      window.GameEngine.emit('battleVictory', {});
+      return;
+    }
   }
 
   function executeEnemyTurn() {

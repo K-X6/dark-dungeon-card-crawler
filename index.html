@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -55,19 +55,9 @@
     });
 
     // 战斗胜利处理
-    window.GameEngine.on('battleStart', () => {});
+    window.GameEngine.on('battleVictory', () => { handleBattleVictory(); });
     
-    // 战斗后：检测胜利 → 选牌
-    let _battleResolved = false;
-    const origEndTurn = window.Combat.endPlayerTurn;
-    window.Combat.endPlayerTurn = function() {
-      origEndTurn.call(window.Combat);
-      const enemies = window.Combat.getEnemies();
-      if (enemies.every(e => e.hp <= 0) && !_battleResolved) {
-        _battleResolved = true;
-        handleBattleVictory();
-      }
-    };
+    // 战斗胜利检测
 
     async function handleBattleVictory() {
       const state = window.GameEngine.getState();
@@ -106,8 +96,7 @@
         if (potion && state.potions.length < 3) state.potions.push(JSON.parse(JSON.stringify(potion)));
       }
 
-      _battleResolved = false;
-      window.MapUI.show();
+        window.MapUI.show();
     }
 
     // 启动菜单
@@ -115,3 +104,4 @@
   </script>
 </body>
 </html>
+
