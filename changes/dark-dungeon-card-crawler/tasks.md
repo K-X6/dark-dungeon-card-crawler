@@ -61,7 +61,7 @@
 4. 编写测试：验证 5 张诅咒牌数据完整性，type='curse'，effects 含 curse 触发效果
 5. 编写测试：验证连击牌 casts=2 字段，验证升级后数值变化
 6. 实现：按设计文档填写 48 张基础卡牌 + 5 张诅咒牌 + 6 张解锁卡牌，使用效果 DSL 格式
-7. 验证：所有测试通过，导出 `CARDS` 数组和 `STARTER_DECKS` 对象
+8. 验证：所有测试通过，导出 `CARDS` 数组和 `STARTER_DECKS` 对象
 
 #### Task 1.2: enemies.js — 敌人数据
 
@@ -120,7 +120,7 @@
 5. 编写测试：save() 写入 localStorage key='darkdungeon_save'，load() 读取且状态一致
 6. 编写测试：load() 无存档时返回 null，存档 JSON 损坏时返回 null 清空键
 7. 实现：GameEngine 单例，内含 _state/_listeners，init/setState/emit/on/off/save/load 方法
-9. 验证：所有测试通过
+11. 验证：所有测试通过
 
 #### Task 2.2: game-engine.js — 初始化流程
 
@@ -144,7 +144,7 @@
 5. 编写测试：addCardToDeck(card) 加入 deck，removeCardFromDeck(index) 移除
 6. 编写测试：getDeckSize() 返回 deck+hand+discardPile 总数，最小为 5 时 removeCard 拒绝
 7. 实现：Deck 模块，操作 GameEngine.getState() 中的 deck/hand/discardPile
-9. 验证：所有测试通过
+11. 验证：所有测试通过
 
 ---
 
@@ -161,8 +161,9 @@
 3. 编写测试：gainArmor(5) 后 gainArmor(7) 当前护甲=12
 4. 编写测试：endTurn() 时 armor 清零
 5. 编写测试：dealDamage(10) with 3 strength 实际造成 13 伤害
-6. 实现：damage/armor/strength 的增减函数，操作 GameState
-7. 验证：所有测试通过
+6. 编写测试：getCardCost(卡牌) 受贤者之石(-1)和敏捷药水(-1)叠加后 2费牌变 0费，不会为负数
+7. 实现：damage/armor/strength/getCardCost 函数，操作 GameState
+8. 验证：所有测试通过
 
 #### Task 3.2: combat.js — 状态效果
 
@@ -175,8 +176,10 @@
 5. 编写测试：applyFrail(1) 后获得护甲减半
 6. 编写测试：applyStun() 后敌人跳过完整一回合
 7. 编写测试：同名状态施加两次只刷新持续时间不叠加效果
-8. 实现：状态效果应用/清除/结算函数
-9. 验证：所有测试通过
+8. 编写测试：诅咒牌在手牌中回合结束时触发一次负面效果，标记已触发，后续回合不再触发
+9. 编写测试：已触发诅咒牌进入弃牌堆后重新抽回，视为未触发，再次触发
+10. 实现：状态效果应用/清除/结算函数 + 诅咒触发管理
+11. 验证：所有测试通过
 
 #### Task 3.3: combat.js — 效果 DSL 执行器
 
@@ -192,7 +195,7 @@
 8. 编写测试：executeEffect({type:'retainArmor'}) 标记护甲本回合不清零
 9. 编写测试：executeEffect({type:'nextTurnEnergy',value:1}) 下回合+1能量
 10. 编写测试：未知 effect type 时 console.warn 不崩溃
-11. 实现：executeEffects(effects[]) 遍历执行所有效果，支持 chain/casts/retainArmor/nextTurnEnergy 等全部 33 种 DSL 类型
+11. 实现：executeEffects(effects[]) 遍历执行所有效果，支持 chain/casts/retainArmor/nextTurnEnergy 等全部 38 种 DSL 类型
 12. 验证：所有测试通过
 
 #### Task 3.4: combat.js — 战斗状态机
@@ -206,7 +209,7 @@
 5. 编写测试：所有敌人 HP<=0 时进入 BATTLE_END
 6. 编写测试：非法状态转换（playerTurn→playerTurn）被拒绝
 7. 实现：状态机 + 5 个状态的处理逻辑
-9. 验证：所有测试通过
+11. 验证：所有测试通过
 
 #### Task 3.5: combat.js — 敌人 AI 与难度缩放
 
@@ -218,7 +221,7 @@
 4. 编写测试：多敌人随机顺序行动
 5. 编写测试：敌人被眩晕时跳过当前回合意图
 6. 实现：executeEnemyTurn() 遍历所有存活敌人执行意图
-7. 验证：所有测试通过
+8. 验证：所有测试通过
 
 #### Task 3.6: relic.js — 遗物钩子系统
 
@@ -232,7 +235,7 @@
 6. 编写测试：凤凰羽毛一次性消耗后不再触发
 7. 编写测试：triggerHook('onEnterRest') 触发治疗石额外 +10 HP
 8. 实现：triggerHook 函数遍历 GameState.relics 执行匹配的 hook，匹配条件为遗物的 hook 字段 === hookName
-9. 验证：所有测试通过
+11. 验证：所有测试通过
 
 ---
 
@@ -252,7 +255,7 @@
 6. 编写测试：短局/标准模式每 3 层必有一个 BOSS 节点
 7. 编写测试：同一章内 BOSS 不重复抽取
 8. 实现：generate(chapter) 返回 MapNode[]，generateFullMap(mode) 返回按章分组的节点数组
-9. 验证：所有测试通过
+11. 验证：所有测试通过
 
 #### Task 4.2: map.js — 路线逻辑
 
@@ -302,7 +305,7 @@
 4. 编写测试："继续游戏" → GameEngine.load() → 恢复状态 → 发射 gameStart
 5. 编写测试：职业选择展示风味描述文字
 6. 实现：菜单流程串联，DOM 渲染
-7. 验证：所有测试通过
+8. 验证：所有测试通过
 
 ---
 
@@ -472,4 +475,5 @@
 1. 验证：战士首次通关 → 裂地斩/钢铁意志/狂战士护腕加入池
 2. 验证：三职业全通 → 命运之轮加入遗物池
 3. 验证：解锁状态 localStorage 持久化，关浏览器重开仍在
+
 
