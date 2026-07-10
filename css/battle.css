@@ -201,3 +201,48 @@
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.3); color: #fff; }
 }
+
+/* === 攻击路径特效 === */
+/* 选卡后敌人高亮 */
+.enemy-card.targetable {
+  border-color: var(--accent-glow);
+  box-shadow: 0 0 16px var(--accent);
+  cursor: crosshair;
+}
+.enemy-card.targetable:hover {
+  border-color: #fff;
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+
+/* 卡片飞行弹道 */
+.card-projectile {
+  position: fixed;
+  z-index: 300;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.card-projectile .mini-card {
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--accent-glow);
+  white-space: nowrap;
+  box-shadow: 0 0 20px var(--accent);
+}
+
+/* 粒子爆散 */
+.particle {
+  position: fixed;
+  z-index: 250;
+  pointer-events: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: particleBurst 0.6s ease-out forwards;
+}
+@keyframes particleBurst {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
