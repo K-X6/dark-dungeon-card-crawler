@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>Test Runner</title></head>
+<body>
+<h1>Batch 1 Data Tests</h1>
+<div id="results"></div>
+<script>
+const results = document.getElementById('results');
+let passed = 0, failed = 0;
+
+function assert(condition, msg) {
+  if (condition) { passed++; results.innerHTML += `<div style="color:green">PASS: ${msg}</div>`; }
+  else { failed++; results.innerHTML += `<div style="color:red">FAIL: ${msg}</div>`; }
+}
+function assertEquals(a, b, msg) { assert(a === b, `${msg}: expected ${b}, got ${a}`); }
+function assertType(val, type, msg) { assert(typeof val === type, `${msg}: expected ${type}`); }
+function assertGt(a, b, msg) { assert(a > b, `${msg}: ${a} > ${b}`); }
+function assertArray(arr, msg) { assert(Array.isArray(arr), `${msg}: is array`); }
+</script>
+
+<script src="../js/data/cards.js"></script>
+<script>
+// Cards tests
+function testCards() {
+  assert(typeof CARDS !== 'undefined', 'CARDS exists');
+  assertArray(CARDS, 'CARDS is array');
+  assertGt(CARDS.length, 40, 'CARDS has >40 cards');
+  
+  // Verify starting decks
+  assert(typeof STARTER_DECKS !== 'undefined', 'STARTER_DECKS exists');
+  assertEquals(STARTER_DECKS.warrior.length, 10, 'Warrior starter 10 cards');
+  assertEquals(STARTER_DECKS.mage.length, 10, 'Mage starter 10 cards');
+  assertEquals(STARTER_DECKS.rogue.length, 10, 'Rogue starter 10 cards');
+  
+  // Verify card structure
+  const card = CARDS[0];
+  assertType(card.id, 'string', 'card.id is string');
+  assertType(card.name, 'string', 'card.name is string');
+  assert(['warrior','mage','rogue','curse'].includes(card.class), 'card.class valid');
+  assert(['attack','defense','ability','curse'].includes(card.type), 'card.type valid');
+  assert(['common','rare','legendary'].includes(card.rarity), 'card.rarity valid');
+  assertType(card.cost, 'number', 'card.cost is number');
+  assertArray(card.effects, 'card.effects is array');
+  
+  // Verify curse cards exist
+  const curses = CARDS.filter(c => c.type === 'curse');
+  assertEquals(curses.length, 5, '5 curse cards');
+  
+  // Verify 连击 has casts field
+  const lianji = CARDS.find(c => c.name === '连击');
+  assert(lianji !== undefined, 'lianji card exists');
+  assertEquals(lianji.casts, 2, 'lianji casts=2');
+}
+testCards();
+</script>
+
+<script src="../js/data/enemies.js"></script>
+<script>
+function testEnemies() {
+  assert(typeof ENEMIES !== 'undefined', 'ENEMIES exists');
+  assert(ENEMIES.chapter1, 'ENEMIES.chapter1 exists');
+  assert(ENEMIES.chapter2, 'ENEMIES.chapter2 exists');
+  assert(ENEMIES.chapter3, 'ENEMIES.chapter3 exists');
+  assertArray(ENEMIES.chapter1.normal, 'ch1 normal is array');
+  assertArray(ENEMIES.chapter1.elite, 'ch1 elite is array');
+  assertArray(ENEMIES.chapter1.boss, 'ch1 boss is array');
+  assertGt(ENEMIES.chapter1.normal.length, 0, 'ch1 has normal enemies');
+  assertGt(ENEMIES.chapter1.boss.length, 1, 'ch1 has bosses');
+  
+  // Verify enemy structure
+  const e = ENEMIES.chapter1.normal[0];
+  assertType(e.name, 'string', 'enemy.name is string');
+  assertArray(e.hp, 'enemy.hp is array');
+  assertEquals(e.hp.length, 3, 'enemy.hp has 3 values (easy/normal/hard)');
+  assertArray(e.intents, 'enemy.intents is array');
+  assertArray(e.hardVariations, 'enemy.hardVariations is array');
+}
+testEnemies();
+</script>
+
+<script src="../js/data/relics.js"></script>
+<script>
+function testRelics() {
+  assert(typeof RELICS !== 'undefined', 'RELICS exists');
+  assertArray(RELICS.common, 'RELICS.common is array');
+  assertArray(RELICS.rare, 'RELICS.rare is array');
+  assertArray(RELICS.legendary, 'RELICS.legendary is array');
+  assertGt(RELICS.common.length, 5, 'common relics >5');
+  assertGt(RELICS.rare.length, 3, 'rare relics >3');
+  assertGt(RELICS.legendary.length, 2, 'legendary relics >2');
+  
+  // Verify relic structure
+  const r = RELICS.common[0];
+  assertType(r.name, 'string', 'relic.name is string');
+  assertType(r.hook, 'string', 'relic.hook is string');
+  assertType(r.effect, 'object', 'relic.effect is object');
+  assertType(r.description, 'string', 'relic.description is string');
+  
+  // Verify phoenix feather
+  const phoenix = [...RELICS.common, ...RELICS.rare, ...RELICS.legendary].find(r => r.name === '凤凰羽毛');
+  assert(phoenix !== undefined, 'phoenix feather exists');
+  assertEquals(phoenix.hook, 'onDeath', 'phoenix feather onDeath hook');
+}
+testRelics();
+</script>
+
+<script src="../js/data/potions.js"></script>
+<script>
+function testPotions() {
+  assert(typeof POTIONS !== 'undefined', 'POTIONS exists');
+  assertArray(POTIONS, 'POTIONS is array');
+  assertEquals(POTIONS.length, 9, '9 potions');
+  
+  const p = POTIONS[0];
+  assertType(p.name, 'string', 'potion.name is string');
+  assert(['common','rare','legendary'].includes(p.rarity), 'potion.rarity valid');
+  
+  const phoenix = POTIONS.find(p => p.name === '凤凰药水');
+  assert(phoenix !== undefined, 'phoenix potion exists');
+  assertEquals(phoenix.rarity, 'legendary', 'phoenix rarity legendary');
+}
+testPotions();
+</script>
+
+<script src="../js/data/events.js"></script>
+<script>
+function testEvents() {
+  assert(typeof EVENTS !== 'undefined', 'EVENTS exists');
+  assertArray(EVENTS, 'EVENTS is array');
+  assertEquals(EVENTS.length, 12, '12 events');
+  
+  const e = EVENTS[0];
+  assertType(e.name, 'string', 'event.name is string');
+  assertArray(e.options, 'event.options is array');
+  assertGt(e.options.length, 1, 'event has options');
+  
+  const demon = EVENTS.find(e => e.name === '恶魔契约');
+  assert(demon !== undefined, 'demon contract exists');
+  
+  const mirror = EVENTS.find(e => e.name === '幻象之间');
+  assert(mirror !== undefined, 'mirror fight exists');
+}
+testEvents();
+</script>
+
+<script>
+results.innerHTML += `<hr><strong>${passed} passed, ${failed} failed</strong>`;
+</script>
+</body>
+</html>
