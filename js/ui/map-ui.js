@@ -6,6 +6,8 @@ window.MapUI = (() => {
     const map = state.map;
     const currentNode = state.currentNode;
 
+    const progressPct = Math.floor(((currentNode || 0) / Math.max(1, map.length - 1)) * 100);
+
     const nodeIcons = {
       battle: '⚔', elite: '💀', boss: '🐉',
       chest: '📦', shop: '💰', rest: '🔥',
@@ -20,8 +22,6 @@ window.MapUI = (() => {
         </div>
         <div class="map-nodes">
           ${map.map((node, i) => {
-            const progress = Math.floor(((currentNode || 0) / Math.max(1, map.length - 1)) * 100);
-
             const nodeIcon = i < currentNode ? '✓' : (nodeIcons[node.type] || '?');
             let nodeClass = 'map-node';
             if (node.type === 'boss') nodeClass += ' node-boss';
@@ -42,7 +42,7 @@ window.MapUI = (() => {
       </div>
     `;
 
-    document.getElementById('progress-fill').style.width = progress + '%';
+    document.getElementById('progress-fill').style.width = progressPct + '%';
     document.getElementById('btn-menu-return').addEventListener('click', function() { if (confirm('返回主菜单？进度已保存。')) { window.GameEngine.save(); window.Menu.show(); } });
     document.querySelectorAll('.map-node.available, .map-node.current').forEach(n => {
       n.addEventListener('click', async () => {
@@ -142,6 +142,7 @@ window.MapUI = (() => {
 
   return { show, handleNode };
 })();
+
 
 
 
