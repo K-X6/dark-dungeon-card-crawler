@@ -14,20 +14,24 @@ window.MapUI = (() => {
 
     app.innerHTML = `
       <div class="map-container">
-        <div class="map-header">
+        <div class="map-header"><button id="btn-menu-return">← 菜单</button><div class="chapter-progress"><div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div></div>
           <h2>第 ${state.chapter} 章</h2>
           <div class="chapter-name">${['','墓穴','深渊','王座之间'][state.chapter]}</div>
         </div>
         <div class="map-nodes">
           ${map.map((node, i) => {
+            const progress = Math.floor(((currentNode || 0) / Math.max(1, map.length - 1)) * 100);
+
+            const nodeIcon = i < currentNode ? '✓' : (nodeIcons[node.type] || '?');
             let nodeClass = 'map-node';
             if (node.type === 'boss') nodeClass += ' node-boss';
             if (i === currentNode) nodeClass += ' current';
             else if (i < currentNode) nodeClass += ' visited';
             else if (i === currentNode + 1) nodeClass += ' available';
+            else nodeClass += ' locked';
             return `
               <div class="${nodeClass}" data-index="${i}">
-                <div class="node-icon">${nodeIcons[node.type] || '?'}</div>
+                <div class="node-icon">${nodeIcon}</div>
                 <div class="node-info">
                   <div>第 ${node.floor} 层 - ${node.type}</div>
                 </div>
@@ -38,6 +42,8 @@ window.MapUI = (() => {
       </div>
     `;
 
+    document.getElementById('progress-fill').style.width = progress + '%';
+    document.getElementById('btn-menu-return').addEventListener('click', function() { if (confirm('返回主菜单？进度已保存。')) { window.GameEngine.save(); window.Menu.show(); } });
     document.querySelectorAll('.map-node.available, .map-node.current').forEach(n => {
       n.addEventListener('click', async () => {
         const idx = parseInt(n.dataset.index);
@@ -136,4 +142,6 @@ window.MapUI = (() => {
 
   return { show, handleNode };
 })();
+
+
 

@@ -1,4 +1,4 @@
-/* 暗黑地牢卡牌爬塔 — 地图界面样式 */
+﻿/* 暗黑地牢卡牌爬塔 — 地图界面样式 */
 .map-container {
   width: 100vw;
   height: 100vh;
@@ -43,3 +43,74 @@
 .map-node .node-type { font-size: 12px; color: var(--text-dim); }
 
 .node-boss { border-color: var(--danger); }
+
+/* === 进度条 === */
+.chapter-progress {
+  margin: 8px 0;
+}
+.progress-bar {
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  width: 200px;
+  margin: 0 auto;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* 已通过节点 */
+.map-node.visited {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: #444;
+}
+.map-node.visited:hover {
+  border-color: #444;
+  transform: none;
+}
+
+/* 已锁定节点 */
+.map-node.locked {
+  opacity: 0.15;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.map-node.locked:hover {
+  border-color: var(--card-border);
+  transform: none;
+}
+
+/* 当前节点更强 */
+.map-node.current {
+  border-color: var(--accent-glow);
+  box-shadow: 0 0 16px var(--accent);
+  transform: scale(1.05);
+}
+
+/* 可选的下一节点 */
+.map-node.available {
+  border-color: var(--gold);
+  animation: pulse-available 2s ease-in-out infinite;
+}
+@keyframes pulse-available {
+  0%, 100% { box-shadow: 0 0 4px var(--gold); }
+  50% { box-shadow: 0 0 12px var(--gold); }
+}
+
+/* 菜单返回按钮 */
+#btn-menu-return {
+  background: transparent;
+  border: 1px solid var(--text-dim);
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 5px 10px;
+}
+#btn-menu-return:hover {
+  border-color: var(--text);
+  color: var(--text);
+}
