@@ -1,4 +1,4 @@
-# Tasks: 暗黑地牢卡牌爬塔
+﻿# Tasks: 暗黑地牢卡牌爬塔
 
 ## File Structure
 
@@ -120,7 +120,7 @@
 5. 编写测试：save() 写入 localStorage key='darkdungeon_save'，load() 读取且状态一致
 6. 编写测试：load() 无存档时返回 null，存档 JSON 损坏时返回 null 清空键
 7. 实现：GameEngine 单例，内含 _state/_listeners，init/setState/emit/on/off/save/load 方法
-8. 验证：所有测试通过
+9. 验证：所有测试通过
 
 #### Task 2.2: game-engine.js — 初始化流程
 
@@ -144,7 +144,7 @@
 5. 编写测试：addCardToDeck(card) 加入 deck，removeCardFromDeck(index) 移除
 6. 编写测试：getDeckSize() 返回 deck+hand+discardPile 总数，最小为 5 时 removeCard 拒绝
 7. 实现：Deck 模块，操作 GameEngine.getState() 中的 deck/hand/discardPile
-8. 验证：所有测试通过
+9. 验证：所有测试通过
 
 ---
 
@@ -187,11 +187,13 @@
 3. 编写测试：executeEffect({type:'poison',layers:5}) 施加中毒
 4. 编写测试：executeEffect({type:'draw',count:2}) 抽 2 张牌
 5. 编写测试：executeEffect({type:'strength',value:3}) 力量+3
-6. 编写测试：executeEffect({type:'retainArmor'}) 标记护甲本回合不清零
-7. 编写测试：executeEffect({type:'nextTurnEnergy',value:1}) 下回合+1能量
-8. 编写测试：未知 effect type 时 console.warn 不崩溃
-9. 实现：executeEffects(effects[]) 遍历执行所有效果
-10. 验证：所有测试通过
+6. 编写测试：executeEffect({type:'chain',value:5}) 对当前目标造成 5 伤害后弹射至另一随机敌人造成 5 伤害
+7. 编写测试：卡牌 casts=2 时打出一张后留在手牌（casts 减为 1），打出 2 次后移入弃牌堆
+8. 编写测试：executeEffect({type:'retainArmor'}) 标记护甲本回合不清零
+9. 编写测试：executeEffect({type:'nextTurnEnergy',value:1}) 下回合+1能量
+10. 编写测试：未知 effect type 时 console.warn 不崩溃
+11. 实现：executeEffects(effects[]) 遍历执行所有效果，支持 chain/casts/retainArmor/nextTurnEnergy 等全部 33 种 DSL 类型
+12. 验证：所有测试通过
 
 #### Task 3.4: combat.js — 战斗状态机
 
@@ -204,7 +206,7 @@
 5. 编写测试：所有敌人 HP<=0 时进入 BATTLE_END
 6. 编写测试：非法状态转换（playerTurn→playerTurn）被拒绝
 7. 实现：状态机 + 5 个状态的处理逻辑
-8. 验证：所有测试通过
+9. 验证：所有测试通过
 
 #### Task 3.5: combat.js — 敌人 AI 与难度缩放
 
@@ -228,8 +230,9 @@
 4. 编写测试：triggerHook('onCardPlayed',{card:{type:'ability'}}) 触发冰霜之心 +3 护甲
 5. 编写测试：无对应遗物时 triggerHook 不报错
 6. 编写测试：凤凰羽毛一次性消耗后不再触发
-7. 实现：triggerHook 函数遍历 GameState.relics 执行匹配的 hook
-8. 验证：所有测试通过
+7. 编写测试：triggerHook('onEnterRest') 触发治疗石额外 +10 HP
+8. 实现：triggerHook 函数遍历 GameState.relics 执行匹配的 hook，匹配条件为遗物的 hook 字段 === hookName
+9. 验证：所有测试通过
 
 ---
 
@@ -332,7 +335,7 @@
 7. 编写测试：战斗开始换牌 → 重抽 → 或接受
 8. 编写测试：战胜利 → showPicker（选牌 3 选 1，可跳过） → 回地图
 9. 实现：battle-ui 订阅 engine.on 事件渲染
-10. 验证：所有测试通过
+12. 验证：所有测试通过
 
 ---
 
@@ -412,7 +415,7 @@
 
 1. 编写测试：chapterCleared 事件 → 显示章节名 + "已征服"文字
 2. 编写测试：章节结算 → 回满 HP → showPicker（3 个稀有遗物选 1） → showPicker（3 张随机稀有度牌选 1）
-3. 编写测试：消耗区所有牌回归 deck
+3. 编写测试：消耗区所有牌回归 deck，GameState.enteringNewChapter 设为 false
 4. 编写测试：选完后进入下一章地图（body data-chapter 更新）
 5. 实现：章节 UI
 6. 验证：所有测试通过
@@ -469,3 +472,4 @@
 1. 验证：战士首次通关 → 裂地斩/钢铁意志/狂战士护腕加入池
 2. 验证：三职业全通 → 命运之轮加入遗物池
 3. 验证：解锁状态 localStorage 持久化，关浏览器重开仍在
+
