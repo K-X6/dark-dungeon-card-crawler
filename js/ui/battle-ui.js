@@ -43,12 +43,13 @@
     html += '<div class="potion-bar">';
     var maxSlots = (state.relics.find(function(r){return r.effect&&r.effect.potionSlots;}) ? 4 : 3);
     for (var pi = 0; pi < maxSlots; pi++) {
-      html += '<div class="potion-slot ' + (state.potions[pi] ? 'filled' : 'empty') + '" data-potion="' + pi + '">';
+      html += '<div class="potion-slot ' + (state.potions[pi] ? 'filled' : 'empty') + '" data-potion="' + pi + '" title="' + (state.potions[pi] ? state.potions[pi].name + ': ' + state.potions[pi].description : '') + '">';
       html += state.potions[pi] ? '🧪' : '';
       html += '</div>';
     }
     html += '</div>';
-    html += '<button id="btn-end-turn"' + (phase !== 'PLAYER_TURN' ? ' disabled' : '') + '>结束回合</button>';
+    html += '<div id="enemy-action-log" style="text-align:center;color:var(--text-dim);font-size:14px;min-height:20px;margin:4px 0"></div>';
+  html += '<button id="btn-end-turn"' + (phase !== 'PLAYER_TURN' ? ' disabled' : '') + '>结束回合</button>';
     html += '</div></div>';
     app.innerHTML = html;
 
@@ -56,7 +57,23 @@
     bindEnemyClicks();
     bindPotionClicks(state);
     document.getElementById('btn-end-turn').addEventListener('click', function() {
+      var enemies = window.Combat.getEnemies();
+      var logLines = [];
+      for (var ei2 = 0; ei2 < enemies.length; ei2++) {
+        var e = enemies[ei2];
+        if (e.hp <= 0) continue;
+        var intent = (e.intents && e.intents[e.intentIndex % e.intents.length]) || '';
+        if (intent.indexOf('attack') === 0) logLines.push(e.name + ' 攻击造成 ' + e.damage + ' 伤害');
+        else if (intent.indexOf('defend') === 0) logLines.push(e.name + ' 防御');
+        else if (intent.indexOf('strengthen') === 0) logLines.push(e.name + ' 强化');
+        else logLines.push(e.name + ' ' + getIntentText(e));
+      }
       window.Combat.endPlayerTurn();
+      var logEl = document.getElementById('enemy-action-log');
+      if (logEl && logLines.length > 0) {
+        logEl.textContent = logLines.join(' | ');
+        setTimeout(function() { if (logEl) logEl.textContent = ''; }, 3000);
+      }
       refresh();
     });
   }
@@ -129,6 +146,7 @@
   function renderCard(card, index, state) {
     var cost = window.Deck.getCardCost(card);
     var canPlay = state.energy >= cost && card.type !== 'curse';
+    var rarityStyle = card.rarity === 'legendary' ? 'border-color:#d4a017;box-shadow:0 0 8px rgba(212,160,23,0.3)' : card.rarity === 'rare' ? 'border-color:#5b7a9a' : '';
     var cls = card.type === 'curse' ? 'card curse' : canPlay ? 'card' : 'card disabled';
     return '<div class="' + cls + '" data-index="' + index + '" title="' + describeCard(card) + '">' +
       '<div class="card-cost">' + cost + '</div>' +

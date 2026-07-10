@@ -38,10 +38,12 @@
     window.GameEngine.on('gameStart', (data) => {
       const state = window.GameEngine.getState();
       document.body.dataset.chapter = state.chapter;
-      // 生成地图
-      const mapData = window.Map.generateFullMap(state.mode);
-      state.map = mapData[0].nodes;
-      state.currentNode = 0;
+      // 继续游戏：直接恢复保存的地图；新游戏：生成地图
+      if (!state.map || state.map.length === 0) {
+        const mapData = window.Map.generateFullMap(state.mode);
+        state.map = mapData[0].nodes;
+        state.currentNode = 0;
+      }
       window.MapUI.show();
     });
 
@@ -104,4 +106,5 @@
   </script>
 </body>
 </html>
+
 
