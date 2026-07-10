@@ -77,11 +77,11 @@ window.Combat = (() => {
       window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'attack', damage: dmg });
     } else if (intent.startsWith('defend')) {
       const val = parseInt(intent.match(/(\d+)/)?.[1] || 0);
-      enemy.hp += val; // simplified: treat as temp HP
+      enemy._shield = (enemy._shield || 0) + val; // 临时护盾，吸收下回合伤害
       window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'defend', value: val });
     } else if (intent.startsWith('strengthen')) {
       const val = parseInt(intent.match(/(\d+)/)?.[1] || 0);
-      enemy.damage = (enemy.damage || rawDmg) + val;
+      enemy._strengthBonus = (enemy._strengthBonus || 0) + val; // 独立力量加成，不叠加到基础伤害
       window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'strengthen', value: val });
     }
     enemy.intentIndex++;
@@ -134,6 +134,16 @@ window.Combat = (() => {
       dmg = Math.floor(dmg * 0.5);
     }
     return dmg;
+  }
+
+
+  function calcDamageToEnemy(rawDmg, enemy) {
+    if (enemy._shield && enemy._shield > 0) {
+      const absorbed = Math.min(enemy._shield, rawDmg);
+      enemy._shield -= absorbed;
+      return rawDmg - absorbed;
+    }
+    return rawDmg;
   }
 
   function gainArmor(val) {
@@ -197,7 +207,8 @@ window.Combat = (() => {
     switch (effect.type) {
       case 'damage':
         if (target && target.hp !== undefined) {
-          const dmg = calcDamage(effect.value);
+          let dmg = calcDamage(effect.value);
+          dmg = calcDamageToEnemy(dmg, target);
           target.hp = Math.max(0, target.hp - dmg);
           window.GameEngine.emit('enemyDamaged', { enemy: target, damage: dmg });
         }
@@ -347,11 +358,9 @@ window.Combat = (() => {
   return {
     getPhase, getEnemies, getTurnCount,
     startBattle, endPlayerTurn, playCard,
-    dealDamageToPlayer, calcDamage, calcEnemyDamage, gainArmor,
+    dealDamageToPlayer, calcDamage, calcEnemyDamage, calcDamageToEnemy, gainArmor,
     applyPoison, applyBurn, tickDot,
     applyWeak, applyVulnerable, applyFrail, applyStun,
     executeEffect, executeEffects
   };
 })();
-
-
