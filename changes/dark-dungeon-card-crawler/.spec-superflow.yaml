@@ -1,0 +1,42 @@
+# .spec-superflow.yaml — lightweight state machine
+# Derived data. Always rebuildable from artifacts. Lost/corrupt → fall back to content-level detection.
+
+# === Core state ===
+state: exploring
+workflow: auto
+
+# === Hashes (fast staleness detection) ===
+artifacts_hash: null
+contract_hash: null
+
+# === Execution progress ===
+execution_mode: null
+batches_completed: 0
+test_result: null
+spec_merged: false
+
+# === Metadata ===
+change_name: dark-dungeon-card-crawler
+last_transition: 2026-07-10T04:59:20.187Z
+last_transition_from: null
+last_transition_to: null
+
+# === Decision points ===
+dp_0_decisions: change:dark-dungeon-card-crawler, intent:暗黑奇幻Roguelike卡牌爬塔纯前端网页游戏, constraints:纯前端可扩展可维护无需后端, communication:draft-for-review-commit-before-change
+dp_0_result: confirmed
+dp_0_confirmed: true
+dp_0_timestamp: 2026-07-10T12:59:29+08:00
+dp_1_result: null
+dp_1_timestamp: null
+dp_2_result: null
+dp_2_timestamp: null
+dp_3_result: null
+dp_3_timestamp: null
+dp_4_result: null
+dp_4_timestamp: null
+dp_5_result: null
+dp_5_timestamp: null
+dp_6_result: null
+dp_6_timestamp: null
+dp_7_result: null
+dp_7_timestamp: null
