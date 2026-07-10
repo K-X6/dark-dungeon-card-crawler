@@ -1,4 +1,4 @@
-// 暗黑地牢卡牌爬塔 — 战斗UI
+﻿// 暗黑地牢卡牌爬塔 — 战斗UI
 window.BattleUI = (() => {
   let selectedCardIndex = null;
 
@@ -138,9 +138,17 @@ window.BattleUI = (() => {
 
   function getIntentText(enemy) {
     const intent = enemy.intents?.[enemy.intentIndex % enemy.intents.length] || '';
-    if (intent.startsWith('attack')) return `伤害 ${enemy.damage}`;
-    if (intent.startsWith('defend')) return `防御`;
-    if (intent.startsWith('strengthen')) return `强化`;
+    const dmg = enemy.damage;
+    if (intent === 'attack') return '\u4F24\u5BB3 ' + dmg;
+    if (intent.startsWith('defend')) return '\u9632\u5FA1';
+    if (intent.startsWith('strengthen')) return '\u5F3A\u5316';
+    if (intent === 'summon') return '\u53EC\u5524';
+    if (intent.startsWith('heal')) return '\u56DE\u590D';
+    if (intent.startsWith('apply') || intent.startsWith('aoePoison')) return '\u6CD5\u672F';
+    if (intent === 'charge') return '\u84C4\u529B';
+    if (intent === 'ultimate') return '\u5FC5\u6740\u6280';
+    if (intent === 'aoe') return '\u5168\u4F53\u653B\u51FB';
+    if (intent === 'lifestealAttack') return '\u5438\u8840 ' + dmg;
     return intent;
   }
 
@@ -176,3 +184,4 @@ window.BattleUI = (() => {
 
   return { show, refresh };
 })();
+

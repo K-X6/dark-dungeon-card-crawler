@@ -1,4 +1,4 @@
-// 暗黑地牢卡牌爬塔 — 地图UI
+﻿// 暗黑地牢卡牌爬塔 — 地图UI
 window.MapUI = (() => {
   function show() {
     const state = window.GameEngine.getState();
@@ -136,3 +136,4 @@ window.MapUI = (() => {
 
   return { show, handleNode };
 })();
+

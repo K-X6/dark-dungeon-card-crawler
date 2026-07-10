@@ -1,4 +1,4 @@
-// 暗黑地牢卡牌爬塔 — 战斗引擎
+﻿// 暗黑地牢卡牌爬塔 — 战斗引擎
 window.Combat = (() => {
   let _phase = 'IDLE';
   let _enemies = [];
@@ -111,6 +111,11 @@ window.Combat = (() => {
     state.hp = Math.max(0, state.hp - actualDmg);
     window.GameEngine.emit('playerDamaged', { damage: actualDmg });
     if (state.hp <= 0) {
+      if (state._revivePercent && state._revivePercent > 0) {
+        state.hp = Math.floor(state.maxHp * state._revivePercent / 100);
+        state._revivePercent = 0;
+        return;
+      }
       window.Relic.triggerHook('onDeath', {});
       if (state.hp <= 0) {
         window.GameEngine.emit('playerDeath', {});
@@ -283,6 +288,24 @@ window.Combat = (() => {
           target.hp = Math.max(0, target.hp - perDmg);
         }
         break;
+      case 'costReduce':
+        if (!state.buffs) state.buffs = [];
+        state.buffs.push({type:'costReduce',value:effect.value});
+        break;
+      case 'regen':
+        if (!state.buffs) state.buffs = [];
+        state.buffs.push({type:'regen',value:effect.value,turns:effect.turns});
+        break;
+      case 'duplicate':
+        if (state.hand.length > 0) {
+          const copy = JSON.parse(JSON.stringify(state.hand[0]));
+          copy.cost = 0;
+          state.hand.push(copy);
+        }
+        break;
+      case 'revive':
+        state._revivePercent = effect.percent;
+        break;
       default:
         console.warn('Unknown effect type:', effect.type);
     }
@@ -330,3 +353,5 @@ window.Combat = (() => {
     executeEffect, executeEffects
   };
 })();
+
+
