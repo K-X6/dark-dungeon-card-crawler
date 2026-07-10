@@ -1,0 +1,145 @@
+/* 暗黑地牢卡牌爬塔 — 战斗界面样式 */
+.battle-container {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: 100vw;
+  height: 100vh;
+  padding: 16px;
+  gap: 12px;
+}
+
+.battle-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.enemy-area {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.enemy-card {
+  background: var(--surface);
+  border: 2px solid var(--card-border);
+  padding: 16px;
+  width: 180px;
+  text-align: center;
+}
+
+.enemy-card h3 { color: var(--danger); margin-bottom: 8px; }
+
+.enemy-hp-bar {
+  height: 6px;
+  background: #333;
+  margin: 8px 0;
+}
+.enemy-hp-fill { height: 100%; background: var(--danger); transition: width 0.3s; }
+
+.enemy-intent {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.enemy-intent .intent-icon { font-size: 20px; }
+
+.player-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 18px;
+  align-items: center;
+}
+
+.player-stats .stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hp-value { color: var(--danger); }
+.armor-value { color: var(--blue); }
+.energy-value { color: var(--gold); }
+
+.hand-area {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px;
+  overflow-x: auto;
+  min-height: 140px;
+  align-items: flex-end;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 6px;
+  padding: 12px;
+  width: 110px;
+  min-height: 140px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card:hover { transform: translateY(-8px); border-color: var(--accent); }
+.card.disabled { opacity: 0.3; cursor: not-allowed; }
+.card.disabled:hover { transform: none; border-color: var(--card-border); }
+.card.curse { border-color: var(--purple); opacity: 0.5; cursor: not-allowed; }
+.card.curse:hover { transform: none; }
+
+.card-cost {
+  background: var(--gold);
+  color: #000;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.card-name { font-size: 14px; margin: 4px 0; }
+.card-type { font-size: 11px; color: var(--text-dim); }
+.card-effects { font-size: 11px; color: var(--accent); }
+
+.card.selected { border-color: var(--accent-glow); box-shadow: 0 0 12px var(--accent); }
+
+.potion-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.potion-slot {
+  width: 36px;
+  height: 48px;
+  border: 2px solid var(--card-border);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.potion-slot.filled { background: var(--surface); }
+.potion-slot.empty { opacity: 0.3; }
+.potion-slot:hover.filled { border-color: var(--accent); }
+
+.battle-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+#mulligan-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 200; flex-direction: column; gap: 16px; }
