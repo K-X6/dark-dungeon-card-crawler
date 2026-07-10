@@ -63,7 +63,20 @@
         var e = enemies[ei2];
         if (e.hp <= 0) continue;
         var intent = (e.intents && e.intents[e.intentIndex % e.intents.length]) || '';
-        if (intent.indexOf('attack') === 0) logLines.push(e.name + ' 攻击造成 ' + e.damage + ' 伤害');
+        var base = intent.split('(')[0];
+        if (base === 'attack') logLines.push(e.name + ' 攻击造成 ' + e.damage + ' 伤害');
+        else if (base === 'lifestealAttack') logLines.push(e.name + ' 吸血攻击造成 ' + e.damage + ' 伤害');
+        else if (base === 'defend') logLines.push(e.name + ' 获得护盾');
+        else if (base === 'strengthen' || base === 'strengthenAll') logLines.push(e.name + ' 攻击力上升');
+        else if (base === 'applyWeak') logLines.push(e.name + ' 使你虚弱');
+        else if (base === 'applyFrail') logLines.push(e.name + ' 使你脆弱');
+        else if (base === 'applyCurse') logLines.push(e.name + ' 将诅咒牌塞入你手牌');
+        else if (base === 'aoePoison') logLines.push(e.name + ' 释放毒雾');
+        else if (base === 'aoe') logLines.push(e.name + ' 全体攻击');
+        else if (base === 'heal') logLines.push(e.name + ' 回复生命');
+        else if (base === 'summon') logLines.push(e.name + ' 召唤援军');
+        else if (base === 'charge') logLines.push(e.name + ' 正在蓄力...');
+        else if (base === 'ultimate') logLines.push(e.name + ' 释放必杀技!');
         else if (intent.indexOf('defend') === 0) logLines.push(e.name + ' 防御');
         else if (intent.indexOf('strengthen') === 0) logLines.push(e.name + ' 强化');
         else logLines.push(e.name + ' ' + getIntentText(e));
@@ -204,32 +217,43 @@
 
   function getIntentIcon(enemy) {
     var intent = (enemy.intents && enemy.intents[enemy.intentIndex % enemy.intents.length]) || '';
-    if (intent.indexOf('attack') === 0 || intent === 'lifestealAttack') return '⚔';
-    if (intent.indexOf('defend') === 0) return '🛡';
-    if (intent.indexOf('strengthen') === 0) return '⬆';
-    if (intent === 'summon') return '💀';
-    if (intent.indexOf('heal') === 0) return '❤';
-    if (intent.indexOf('apply') === 0 || intent.indexOf('aoePoison') === 0) return '🔮';
-    if (intent === 'charge') return '⚡';
-    if (intent === 'ultimate') return '☠';
-    if (intent === 'aoe') return '💥';
+    var base = intent.split('(')[0];
+    if (base === 'attack' || base === 'lifestealAttack') return '⚔';
+    if (base === 'defend') return '🛡';
+    if (base === 'strengthen' || base === 'strengthenAll') return '⬆';
+    if (base === 'summon') return '💀';
+    if (base === 'heal') return '❤';
+    if (base === 'applyWeak') return '💤';
+    if (base === 'applyFrail') return '💥';
+    if (base === 'applyCurse') return '👿';
+    if (base === 'aoePoison' || base === 'aoe') return '💥';
+    if (base === 'charge') return '⚡';
+    if (base === 'ultimate') return '☠';
     return '❓';
-  }
+  }  }
 
   function getIntentText(enemy) {
     var intent = (enemy.intents && enemy.intents[enemy.intentIndex % enemy.intents.length]) || '';
-    if (intent === 'attack') return '伤害 ' + enemy.damage;
-    if (intent.indexOf('defend') === 0) return '防御';
-    if (intent.indexOf('strengthen') === 0) return '强化';
-    if (intent === 'summon') return '召唤';
-    if (intent.indexOf('heal') === 0) return '回复';
-    if (intent.indexOf('apply') === 0 || intent.indexOf('aoePoison') === 0) return '法术';
-    if (intent === 'charge') return '蓄力';
-    if (intent === 'ultimate') return '必杀技';
-    if (intent === 'aoe') return '全体攻击';
-    if (intent === 'lifestealAttack') return '吸血 ' + enemy.damage;
+    var match = intent.match(/^(\w+)\((\d+)\)$/);
+    var base = match ? match[1] : intent;
+    var val = match ? parseInt(match[2]) : 0;
+    var dmg = enemy.damage;
+    if (base === 'attack') return '伤害 ' + dmg;
+    if (base === 'lifestealAttack') return '吸血 ' + dmg + ' (' + (val||50) + '%)';
+    if (base === 'defend') return '防御 ' + val;
+    if (base === 'strengthen') return '强化 +' + val;
+    if (base === 'strengthenAll') return '全体强化 +' + val;
+    if (base === 'summon') return '召唤';
+    if (base === 'heal') return '回复 ' + val;
+    if (base === 'applyWeak') return '虚弱 1回合';
+    if (base === 'applyFrail') return '脆弱 1回合';
+    if (base === 'applyCurse') return '诅咒牌';
+    if (base === 'aoePoison') return '毒雾 ' + val;
+    if (base === 'aoe') return '全体攻击';
+    if (base === 'charge') return '蓄力 +' + val;
+    if (base === 'ultimate') return '必杀技!';
     return intent;
-  }
+  }  }
 
   function showMulligan(state) {
     var overlay = document.createElement('div');

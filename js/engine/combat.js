@@ -86,21 +86,62 @@ window.Combat = (() => {
   }
 
   function executeEnemyIntent(enemy) {
+    const state = window.GameEngine.getState();
     const intent = enemy.intents[enemy.intentIndex % enemy.intents.length];
     const rawDmg = enemy.damage;
+    const match = intent.match(/^(w+)((d+))$/);
+    const baseIntent = match ? match[1] : intent;
+    const val = match ? parseInt(match[2]) : 0;
 
-    if (intent.startsWith('attack')) {
+    if (baseIntent === 'attack' || baseIntent === 'lifestealAttack') {
       const dmg = calcEnemyDamage(enemy);
       dealDamageToPlayer(dmg);
-      window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'attack', damage: dmg });
-    } else if (intent.startsWith('defend')) {
-      const val = parseInt(intent.match(/(\d+)/)?.[1] || 0);
-      enemy._shield = (enemy._shield || 0) + val; // 临时护盾，吸收下回合伤害
-      window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'defend', value: val });
-    } else if (intent.startsWith('strengthen')) {
-      const val = parseInt(intent.match(/(\d+)/)?.[1] || 0);
-      enemy._strengthBonus = (enemy._strengthBonus || 0) + val; // 独立力量加成，不叠加到基础伤害
-      window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'strengthen', value: val });
+      if (baseIntent === 'lifestealAttack') {
+        const heal = Math.floor(dmg * (val / 100) || dmg * 0.5);
+        enemy.hp = Math.min(enemy.maxHp, enemy.hp + heal);
+      }
+    } else if (baseIntent === 'defend') {
+      enemy._shield = (enemy._shield || 0) + val;
+    } else if (baseIntent === 'strengthen' || baseIntent === 'strengthenAll') {
+      if (baseIntent === 'strengthenAll') {
+        const enemies = window.Combat.getEnemies();
+        for (const e of enemies) {
+          if (e.hp > 0) e._strengthBonus = (e._strengthBonus || 0) + val;
+        }
+      } else {
+        enemy._strengthBonus = (enemy._strengthBonus || 0) + val;
+      }
+    } else if (baseIntent === 'applyWeak') {
+      if (!state.effects) state.effects = {};
+      state.effects.weak = (state.effects.weak || 0) + 1;
+    } else if (baseIntent === 'applyFrail') {
+      if (!state.effects) state.effects = {};
+      state.effects.frail = (state.effects.frail || 0) + 1;
+    } else if (baseIntent === 'applyCurse') {
+      const curses = window.CARDS.filter(c => c.type === 'curse');
+      if (curses.length > 0) {
+        const curse = JSON.parse(JSON.stringify(curses[Math.floor(Math.random() * curses.length)]));
+        state.hand.push(curse);
+      }
+    } else if (baseIntent === 'aoePoison') {
+      state.hp = Math.max(0, state.hp - val); // simplified: direct damage as poison
+    } else if (baseIntent === 'aoe') {
+      const dmg = calcEnemyDamage(enemy);
+      dealDamageToPlayer(Math.floor(dmg * 0.7)); // AOE does 70% of normal
+    } else if (baseIntent === 'heal') {
+      enemy.hp = Math.min(enemy.maxHp, enemy.hp + val);
+    } else if (baseIntent === 'summon') {
+      // summon a minion - simplified: enemy heals + buffs itself
+      enemy.hp = Math.min(enemy.maxHp, enemy.hp + 10);
+      enemy._strengthBonus = (enemy._strengthBonus || 0) + 2;
+    } else if (baseIntent === 'charge') {
+      enemy._chargeBonus = (enemy._chargeBonus || 0) + (val > 0 ? val : 10);
+    }
+    // 'ultimate' uses the accumulated charge bonus
+    if (baseIntent === 'ultimate') {
+      const charge = enemy._chargeBonus || 30;
+      dealDamageToPlayer(calcEnemyDamage(enemy) + charge);
+      enemy._chargeBonus = 0;
     }
     enemy.intentIndex++;
   }
