@@ -155,7 +155,7 @@ window.EventUI = (() => {
   async function showRest() {
     const state = window.GameEngine.getState();
     const allCards = [...state.deck, ...state.hand, ...state.discardPile];
-    const upgradable = allCards.filter(c => !c.upgraded && c.effects && c.upgraded);
+    const upgradable = allCards.filter(c => !c._upgraded && c.upgraded && c.upgraded.effects);
 
     const app = document.getElementById('app');
     app.innerHTML = `
@@ -181,9 +181,9 @@ window.EventUI = (() => {
       const idx = await window.showPicker(upgradable.map(c => ({label: c.name})), {title: '选择升级', allowSkip: false});
       if (idx >= 0) {
         const card = upgradable[idx];
-        card.upgraded = true;
-        if (card.upgradedEffects) card.effects = card.upgradedEffects;
-        if (card.upgradedCost !== undefined) card.cost = card.upgradedCost;
+        card._upgraded = true;
+        card.effects = JSON.parse(JSON.stringify(card.upgraded.effects));
+        if (card.upgraded.upgradedCost !== undefined) card.cost = card.upgraded.upgradedCost;
       }
       window.MapUI.show();
     });

@@ -82,6 +82,9 @@
         else logLines.push(e.name + ' ' + getIntentText(e));
       }
       window.Combat.endPlayerTurn();
+      var enemiesAfter = window.Combat.getEnemies();
+      if (enemiesAfter.every(function(e){return e.hp<=0;})) sfxVictory();
+      else if (window.GameEngine.getState().hp > 0) sfxTurnEnd();
       var logEl = document.getElementById('enemy-action-log');
       if (logEl && logLines.length > 0) {
         logEl.textContent = logLines.join(' | ');
@@ -127,6 +130,7 @@
           if (enemyEl) {
             var rect = enemyEl.getBoundingClientRect();
             enemyEl.classList.add('hit');
+          sfxDamage();
             createParticles(rect.left + rect.width/2, rect.top + rect.height/2);
             setTimeout(function(){enemyEl.classList.remove('hit');}, 300);
           }
@@ -161,6 +165,7 @@
     var canPlay = state.energy >= cost && card.type !== 'curse';
     var rarityStyle = card.rarity === 'legendary' ? 'border-color:#d4a017;box-shadow:0 0 8px rgba(212,160,23,0.3)' : card.rarity === 'rare' ? 'border-color:#5b7a9a' : '';
     var cls = card.type === 'curse' ? 'card curse' : canPlay ? 'card' : 'card disabled';
+    if (card._upgraded) cls += ' upgraded';
     return '<div class="' + cls + '" data-index="' + index + '" title="' + describeCard(card) + '">' +
       '<div class="card-cost">' + cost + '</div>' +
       '<div class="card-name">' + card.name + '</div>' +
@@ -311,6 +316,32 @@
       setTimeout(function(){p.remove();}, 600);
     }
   }
+
+  var AudioCtx = window.AudioContext || window.webkitAudioContext;
+  var audioCtx = null;
+
+  function playSound(freq, type, duration, vol) {
+    try {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'square';
+      osc.frequency.value = freq;
+      gain.gain.value = (vol || 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (duration || 0.12));
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + (duration || 0.12));
+    } catch(e) {}
+  }
+
+  function sfxCardPlay() { playSound(800, 'square', 0.08, 0.04); }
+  function sfxDamage() { playSound(120, 'sawtooth', 0.15, 0.06); }
+  function sfxEnemyDefeated() { playSound(300, 'triangle', 0.2, 0.05); setTimeout(function(){playSound(500,'triangle',0.15,0.04);},100); }
+  function sfxVictory() { playSound(523, 'triangle', 0.15, 0.06); setTimeout(function(){playSound(659,'triangle',0.15,0.06);},150); setTimeout(function(){playSound(784,'triangle',0.3,0.08);},300); }
+  function sfxTurnEnd() { playSound(200, 'sine', 0.1, 0.03); }
+  function sfxWeakHit() { playSound(80, 'sawtooth', 0.25, 0.08); }
 
   function refresh() { render(window.GameEngine.getState()); }
 

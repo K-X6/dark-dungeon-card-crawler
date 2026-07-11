@@ -62,7 +62,7 @@ window.Deck = (() => {
   function getCardCost(card) {
     const state = window.GameEngine.getState();
     if (!state || !card) return 99;
-    let cost = card.upgradedCost !== undefined ? card.upgradedCost : card.cost;
+    let cost = (card._upgraded && card.upgraded && card.upgraded.upgradedCost !== undefined) ? card.upgraded.upgradedCost : card.cost;
     // 应用遗物费用减免
     if (state.relics) {
       for (const relic of state.relics) {
