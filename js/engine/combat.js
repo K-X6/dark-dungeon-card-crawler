@@ -69,8 +69,17 @@ window.Combat = (() => {
     _phase = 'PLAYER_TURN';
     _turnCount++;
     window.GameEngine.emit('turnStart', { turn: _turnCount });
-    // Process regen buffs
+    window.GameEngine.emit('turnStart', { turn: _turnCount });
     const s2 = window.GameEngine.getState();
+    // Decay player status effects
+    if (s2.effects) {
+      var keys = ['weak','frail','vulnerable'];
+      for (var ki = 0; ki < keys.length; ki++) {
+        var k = keys[ki];
+        if (s2.effects[k] > 0) { s2.effects[k]--; if (s2.effects[k] <= 0) delete s2.effects[k]; }
+      }
+    }
+    // Process regen buffs
     if (s2.buffs && s2.buffs.length > 0) {
       const remaining = [];
       for (const b of s2.buffs) {
@@ -184,7 +193,9 @@ window.Combat = (() => {
 
   function calcDamage(baseDmg) {
     const state = window.GameEngine.getState();
-    return baseDmg + (state.strength || 0);
+    let dmg = baseDmg + (state.strength || 0);
+    if (state.effects && state.effects.weak > 0) { dmg = Math.floor(dmg * 0.5); }
+    return dmg;
   }
 
   function calcEnemyDamage(enemy) {
