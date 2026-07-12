@@ -309,3 +309,8 @@ body.deathblow .battle-container {
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 }
+
+.card.type-attack { background: linear-gradient(135deg, #2a1010, #1a1a2e); }
+.card.type-defense { background: linear-gradient(135deg, #101a2a, #1a1a2e); }
+.card.type-ability { background: linear-gradient(135deg, #1a1a10, #1a1a2e); border-color: #8b7d1a; }
+.card.type-curse { background: linear-gradient(135deg, #1a0a1a, #1a1a2e); }

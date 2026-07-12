@@ -203,7 +203,8 @@
     var cost = window.Deck.getCardCost(card);
     var canPlay = state.energy >= cost && card.type !== 'curse';
     var rarityStyle = card.rarity === 'legendary' ? 'border-color:#d4a017;box-shadow:0 0 8px rgba(212,160,23,0.3)' : card.rarity === 'rare' ? 'border-color:#5b7a9a' : '';
-    var cls = card.type === 'curse' ? 'card curse' : canPlay ? 'card playable' : 'card disabled';
+    var typeClass = 'type-' + card.type;
+    var cls = card.type === 'curse' ? 'card curse ' + typeClass : canPlay ? 'card playable ' + typeClass : 'card disabled ' + typeClass;
     if (card._upgraded) cls += ' upgraded';
     return '<div class="' + cls + '" data-index="' + index + '" title="' + describeCard(card) + '">' +
       '<div class="card-cost">' + cost + '</div>' +
