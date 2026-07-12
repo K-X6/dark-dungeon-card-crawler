@@ -314,3 +314,13 @@ body.deathblow .battle-container {
 .card.type-defense { background: linear-gradient(135deg, #101a2a, #1a1a2e); }
 .card.type-ability { background: linear-gradient(135deg, #1a1a10, #1a1a2e); border-color: #8b7d1a; }
 .card.type-curse { background: linear-gradient(135deg, #1a0a1a, #1a1a2e); }
+
+body.player-hit .battle-container {
+  animation: playerShake 0.25s ease;
+}
+@keyframes playerShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+  75% { transform: translateX(-2px); }
+}

@@ -119,7 +119,9 @@
         else if (intent.indexOf('strengthen') === 0) logLines.push(e.name + ' 强化');
         else logLines.push(e.name + ' ' + getIntentText(e));
       }
+      var hpBefore = window.GameEngine.getState().hp;
       window.Combat.endPlayerTurn();
+      if (window.GameEngine.getState().hp < hpBefore) { document.body.classList.add('player-hit'); setTimeout(function(){document.body.classList.remove('player-hit');},300); }
       var enemiesAfter = window.Combat.getEnemies();
       if (enemiesAfter.every(function(e){return e.hp<=0;})) sfxVictory();
       else if (window.GameEngine.getState().hp > 0) sfxTurnEnd();
