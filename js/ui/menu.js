@@ -67,7 +67,7 @@ window.Menu = (() => {
         <div class="difficulty-select">
           <button id="btn-easy">简单 <span class="diff-desc">— 敌人较弱，适合熟悉游戏</span></button>
           <button id="btn-normal">普通 <span class="diff-desc">— 标准挑战，适度压力</span></button>
-          <button id="btn-hard">困难 <span class="diff-desc">— 敌人更强且行为多变</span></button>
+          <button id="btn-hard">困难 <span class="diff-desc">— 敌人更强，每场战斗随机获得一种额外能力</span></button>
           <button id="btn-back">返回</button>
         </div>
       </div>
