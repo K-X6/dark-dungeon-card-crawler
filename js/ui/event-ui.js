@@ -159,8 +159,9 @@ window.EventUI = (() => {
 
     const app = document.getElementById('app');
     app.innerHTML = `
-      <div class="overlay">
+      <div class="overlay" style="background:radial-gradient(ellipse at center, rgba(255,140,0,0.08) 0%, rgba(0,0,0,0.85) 70%)">
         <div class="overlay-content">
+          <div style="font-size:48px;margin-bottom:8px;animation:bonfireFlicker 1.5s ease-in-out infinite">🔥</div>
           <h2>休息点</h2>
           <div class="picker-options">
             <button id="rest-heal">回复 30% HP</button>
