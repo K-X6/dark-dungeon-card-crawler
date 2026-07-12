@@ -14,11 +14,13 @@ window.Menu = (() => {
         <h1>暗黑地牢</h1>
         <div class="subtitle">卡牌爬塔</div>
         var bestScore = '0'; try { bestScore = localStorage.getItem('darkdungeon_bestscore') || '0'; } catch(e) {}
+      var deaths = 0; try { deaths = parseInt(localStorage.getItem('darkdungeon_deaths') || '0'); } catch(e) {}
       var streak = 0; try { streak = parseInt(localStorage.getItem('darkdungeon_streak') || '0'); } catch(e) {};
     app.innerHTML = '<div class="menu-screen">' +
       '<h1>暗黑地牢</h1>' +
       '<div class="subtitle">卡牌爬塔</div>' +
       (bestScore !== '0' ? '<div style="color:var(--gold);font-size:14px;margin-bottom:4px">🏆 最高分: ' + bestScore + '</div>' : '') +
+      (deaths > 0 ? '<div style="color:var(--text-dim);font-size:13px;margin-bottom:2px">💀 死亡: ' + deaths + '</div>' : '') +
       (streak > 0 ? '<div style="color:var(--danger);font-size:14px;margin-bottom:12px">🔥 连胜: ' + streak + '</div>' : '') +
       '<div style="position:absolute;bottom:20px;right:20px"><button id="btn-settings" style="font-size:20px;padding:6px 10px;background:transparent;border:none;color:var(--text-dim)" title="设置">⚙</button></div>' +
       '<div class="menu-options">'

@@ -115,6 +115,7 @@ window.ResultUI = (() => {
 
   function showDeath() {
     document.body.classList.add('death-vignette');
+    try { var d=parseInt(localStorage.getItem('darkdungeon_deaths')||'0')+1; localStorage.setItem('darkdungeon_deaths',''+d); } catch(e){}
     const state = window.GameEngine.getState();
     const app = document.getElementById('app');
     app.innerHTML = `
