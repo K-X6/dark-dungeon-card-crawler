@@ -4,6 +4,16 @@
   function show() {
     render(window.GameEngine.getState());
     showMulligan(window.GameEngine.getState());
+    try {
+      if (!localStorage.getItem('darkdungeon_tutorial')) {
+        localStorage.setItem('darkdungeon_tutorial', '1');
+        var hint = document.createElement('div');
+        hint.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:2px solid var(--accent);color:var(--text);padding:8px 20px;border-radius:8px;z-index:300;font-size:14px;animation:toastIn 4s ease forwards';
+        hint.textContent = '👆 点击卡牌 → 选择敌人攻击 | 空格键结束回合';
+        document.body.appendChild(hint);
+        setTimeout(function(){hint.remove();}, 4000);
+      }
+    } catch(e) {}
   }
 
   function render(state) {
