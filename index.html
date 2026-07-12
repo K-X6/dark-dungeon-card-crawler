@@ -35,7 +35,10 @@
   <script src="js/ui/chapter-ui.js"></script>
 
   <script>
-    window.Menu.show();
+    document.getElementById('app').innerHTML='<div style=color:red>JS执行了</div>';
+    if(!window.Menu) document.getElementById('app').innerHTML+='<br>Menu undefined';
+    else if(!window.Menu.show) document.getElementById('app').innerHTML+='<br>show missing';
+    else { try { window.Menu.show(); } catch(e) { document.getElementById('app').innerHTML+='<br>ERROR: '+e.message; } }
 
     // 事件路由
     window.GameEngine.on('gameStart', (data) => {
