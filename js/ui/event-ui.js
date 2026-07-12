@@ -12,7 +12,7 @@ window.EventUI = (() => {
       <div class="overlay">
         <div class="overlay-content">
           <h2>${event.name}</h2>
-          <p style="margin:12px 0;color:var(--text-dim)">${event.description}</p>
+          <p style="margin:6px 0;color:var(--text-dim);font-style:italic;font-size:13px">${event.description}</p>
           <div class="picker-options">
             ${event.options.map((opt, i) => `
               <button data-opt="${i}">${opt.text}</button>
