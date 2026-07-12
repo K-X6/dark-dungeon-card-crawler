@@ -81,9 +81,10 @@ window.ResultUI = (() => {
 
     const app = document.getElementById('app');
     app.innerHTML = `
-      <div class="overlay">
-        <div class="overlay-content" style="max-width:400px">
-          <h2>胜利！</h2>
+      <div class="overlay" style="animation:fadeIn 0.5s">
+        <div class="overlay-content" style="max-width:400px;border-color:var(--gold);box-shadow:0 0 30px rgba(212,160,23,0.3)">
+          <div style="font-size:48px;margin-bottom:8px">🏆</div>
+          <h2 style="color:var(--gold);font-size:28px">胜利！</h2>
           <div style="font-size:36px;color:var(--gold);margin:12px 0">${totalScore} 分</div>
           <div style="text-align:left;margin:12px 0;font-size:14px">
             <div>职业：${state.class} | 模式：${state.mode} | 难度：${state.difficulty}</div>
@@ -105,9 +106,10 @@ window.ResultUI = (() => {
     const state = window.GameEngine.getState();
     const app = document.getElementById('app');
     app.innerHTML = `
-      <div class="overlay">
-        <div class="overlay-content">
-          <h2>你死了</h2>
+      <div class="overlay" style="animation:fadeIn 0.5s">
+        <div class="overlay-content" style="border-color:var(--danger);box-shadow:0 0 30px rgba(231,76,60,0.3)">
+          <div style="font-size:48px;margin-bottom:8px">💀</div>
+          <h2 style="color:var(--danger);font-size:28px">战死</h2>
           <div style="text-align:left;margin:12px 0;font-size:14px">
             <div>职业：${state.class} | 到达层数：${state.floor}</div>
             <div>击杀敌人数：${state.enemiesDefeated} | 击败 BOSS：${state.bossesDefeated}</div>

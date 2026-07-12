@@ -1,4 +1,4 @@
-/* 暗黑地牢卡牌爬塔 — 全局样式 */
+﻿/* 暗黑地牢卡牌爬塔 — 全局样式 */
 :root {
   --bg: #0d1117;
   --surface: #161b22;
@@ -183,3 +183,8 @@ button:disabled {
 }
 
 .hidden { display: none !important; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
