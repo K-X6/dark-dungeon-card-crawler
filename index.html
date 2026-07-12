@@ -91,9 +91,10 @@
       // 普通/精英战斗：选牌
       const pool = window.CARDS.filter(c => c.rarity === 'common' && c.type !== 'curse' && (c.class === state.class));
       const options = [];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 3 && pool.length > 0; i++) {
         options.push(pool[Math.floor(Math.random() * pool.length)]);
       }
+      if (options.length === 0) { window.MapUI.show(); return; }
       const idx = await window.showPicker(options.map(c => ({label: `${c.name} (${c.cost}费)`})), {title: '战后选牌', allowSkip: true});
       if (idx >= 0) window.Deck.addCardToDeck(options[idx]);
 

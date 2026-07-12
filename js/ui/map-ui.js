@@ -1,6 +1,6 @@
 ﻿// 暗黑地牢卡牌爬塔 — 地图UI
 window.MapUI = (() => {
-  function show() {
+  function show() { document.body.classList.remove('boss-fight');
     const state = window.GameEngine.getState();
     const app = document.getElementById('app');
     const map = state.map;

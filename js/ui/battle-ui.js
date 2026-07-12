@@ -422,7 +422,7 @@
     var drawCards = state.deck || [];
     var discardCards = state.discardPile || [];
     var html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:400;display:flex;flex-direction:column;align-items:center;padding:20px;overflow-y:auto" id="deck-viewer">';
-    html += '<h3 style="color:var(--accent);margin-bottom:16px">📦 抽牌堆 (' + drawCards.length + ')</h3>';
+    var handCards=state.hand||[];html+='<h3 style="color:var(--accent);margin-bottom:16px">✋ 手牌 ('+handCards.length+')</h3>';html+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:600px;margin-bottom:12px">';for(var hi=0;hi<handCards.length;hi++){var hc=handCards[hi];var rhc=hc.rarity==='legendary'?'border-color:#d4a017':hc.rarity==='rare'?'border-color:#5b7a9a':'';html+='<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px;'+rhc+'" title="'+describeCard(hc)+'">'+hc.name+' ('+hc.cost+'费) '+describeEffects(hc.effects)+'</div>';}html+=handCards.length===0?'<span style="color:var(--text-dim)">空</span>':'';html+='</div>';html+='<h3 style="color:var(--accent);margin-bottom:16px">📦 抽牌堆 (' + drawCards.length + ')</h3>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:600px">';
     for (var i = 0; i < drawCards.length; i++) {
       var c = drawCards[i];
