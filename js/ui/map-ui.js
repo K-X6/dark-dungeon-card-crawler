@@ -17,6 +17,7 @@ window.MapUI = (() => {
     app.innerHTML = `
       <div class="map-container">
         <div class="map-header"><button id="btn-menu-return">← 菜单</button><div class="chapter-progress"><div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div></div>
+          <div style="color:var(--text-dim);font-size:12px;margin-bottom:4px">牌组:${state.deck?state.deck.length:0}张 | 遗物:${state.relics?state.relics.length:0}个 | 药水:${state.potions?state.potions.length:0}瓶</div>
           <h2>第 ${state.chapter} 章</h2>
           <div class="chapter-name">${['','墓穴','深渊','王座之间'][state.chapter]}</div>
         </div>
