@@ -240,7 +240,7 @@
     var cls = card.type === 'curse' ? 'card curse ' + typeClass : canPlay ? 'card playable ' + typeClass : 'card disabled ' + typeClass;
     if (card._upgraded) cls += ' upgraded';
     return '<div class="' + cls + '" data-index="' + index + '" title="' + describeCard(card) + '">' +
-      '<div class="card-cost">' + cost + '</div>' +
+      '<div class="card-cost">' + cost + '</div>' + (card.casts>1?'<div class="card-casts" style="position:absolute;bottom:2px;right:4px;font-size:10px;color:var(--gold)">x'+card.casts+'</div>':'') +
       '<div class="card-name">' + card.name + '</div>' +
       '<div class="card-type">' + card.type + '</div>' +
       '<div class="card-effects">' + describeEffects(card.effects) + '</div></div>';
