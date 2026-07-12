@@ -40,7 +40,7 @@ window.GameEngine = (() => {
   function init(cls, mode, difficulty) {
     const classConfig = {
       warrior: { hp: 80, maxHp: 80, energy: 3, starter: 'warrior' },
-      mage:    { hp: 60, maxHp: 60, energy: 4, starter: 'mage'    },
+      mage:    { hp: 65, maxHp: 65, energy: 4, starter: 'mage'    },
       rogue:   { hp: 70, maxHp: 70, energy: 2, starter: 'rogue'   }
     };
     const cfg = classConfig[cls];
