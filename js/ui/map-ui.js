@@ -109,13 +109,30 @@ window.MapUI = (() => {
         if (variation.effect.damageMultiplier) enemies[0].damage = Math.floor(enemies[0].damage * variation.effect.damageMultiplier);
       }
     } else {
-      const pool = window.ENEMIES['chapter' + state.chapter].normal;
-      const enemy = pool[Math.floor(Math.random() * pool.length)];
-      enemies = [{
+    const pool = window.ENEMIES['chapter' + state.chapter].normal;
+    const count = Math.random() < 0.6 ? 2 : 1; // 60% chance of 2 enemies
+    enemies = [];
+    const usedNames = [];
+    for (let ci = 0; ci < count; ci++) {
+      let enemy;
+      let attempts = 0;
+      // Try to avoid duplicate enemy types
+      do {
+        enemy = pool[Math.floor(Math.random() * pool.length)];
+        attempts++;
+      } while (usedNames.includes(enemy.name) && attempts < 10 && pool.length > 1);
+      usedNames.push(enemy.name);
+      const e = {
         name: enemy.name, hp: enemy.hp[diffIdx], maxHp: enemy.hp[diffIdx],
-        damage: enemy.damage[diffIdx], intents: enemy.intents,
+        damage: enemy.damage[diffIdx], intents: enemy.intents.slice(),
         poison: 0, burn: 0, effects: {}
-      }];
+      };
+      if (state.difficulty === 'hard' && enemy.hardVariations && enemy.hardVariations.length > 0) {
+        const variation = enemy.hardVariations[Math.floor(Math.random() * enemy.hardVariations.length)];
+        applyVariation(e, variation);
+      }
+      enemies.push(e);
+    }
       if (state.difficulty === 'hard' && enemy.hardVariations?.length) {
         const variation = enemy.hardVariations[Math.floor(Math.random() * enemy.hardVariations.length)];
         if (variation.effect.damageMultiplier) enemies[0].damage = Math.floor(enemies[0].damage * variation.effect.damageMultiplier);
