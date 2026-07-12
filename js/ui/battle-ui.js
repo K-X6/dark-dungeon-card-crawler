@@ -219,6 +219,7 @@
           if (potion && potion.effect) {
             window.Combat.executeEffect(potion.effect);
             state.potions.splice(idx, 1);
+            showFloatText(window.innerWidth/2, window.innerHeight*0.3, potion.name+' 已使用', 'heal');
             window.GameEngine.emit('potionUsed', {potion: potion});
             refresh();
           }
