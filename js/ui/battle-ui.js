@@ -174,6 +174,7 @@
           }
           selectedCardIndex = null;
           var allDead = window.Combat.getEnemies().every(function(e){return e.hp <= 0;});
+        if (allDead) { document.body.classList.add('deathblow'); setTimeout(function(){document.body.classList.remove('deathblow');},500); }
           if (allDead) { setTimeout(function(){window.Combat.endPlayerTurn();}, 300); }
           else { setTimeout(function(){refresh();}, 200); }
         });

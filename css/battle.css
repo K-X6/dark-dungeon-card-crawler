@@ -297,3 +297,15 @@
   0%, 100% { box-shadow: 0 0 4px var(--accent); }
   50% { box-shadow: 0 0 16px var(--accent-glow); }
 }
+
+/* 最后一击震撼 */
+body.deathblow .battle-container {
+  animation: shake 0.4s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
