@@ -1,4 +1,4 @@
-// 暗黑地牢卡牌爬塔 — 章节转场 + 战绩
+﻿// 暗黑地牢卡牌爬塔 — 章节转场 + 战绩
 window.ChapterUI = (() => {
   async function showCleared(chapterNum) {
     const state = window.GameEngine.getState();
@@ -129,10 +129,46 @@ window.ResultUI = (() => {
 
   function unlockCheck(cls) {
     try {
-      let unlocks = JSON.parse(localStorage.getItem('darkdungeon_unlocks') || '{}');
+      var unlocks = JSON.parse(localStorage.getItem('darkdungeon_unlocks') || '{}');
+      var isNew = !unlocks[cls];
       unlocks[cls] = true;
       localStorage.setItem('darkdungeon_unlocks', JSON.stringify(unlocks));
+      if (isNew) {
+        var items = getUnlockItems(cls);
+        showUnlockPopup(cls, items);
+      }
     } catch(e) {}
+  }
+  
+  function getUnlockItems(cls) {
+    var items = [];
+    var allCards = window.CARDS || [];
+    var unlockedCards = allCards.filter(function(c){return c.unlock === cls;});
+    for (var i = 0; i < unlockedCards.length; i++) {
+      items.push({type:'card', name: unlockedCards[i].name});
+    }
+    var relics = window.RELICS || {};
+    if (relics.unlock && relics.unlock[cls]) {
+      items.push({type:'relic', name: relics.unlock[cls].name});
+    }
+    return items;
+  }
+  
+  function showUnlockPopup(cls, items) {
+    var classNames = {warrior:'战士', mage:'法师', rogue:'盗贼'};
+    var html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:600" id="unlock-popup">';
+    html += '<div style="font-size:36px;margin-bottom:8px">🔓</div>';
+    html += '<h2 style="color:var(--gold);font-size:24px">' + (classNames[cls]||cls) + ' 通关！</h2>';
+    html += '<div style="color:var(--text);margin:12px 0;text-align:center">已解锁：</div>';
+    for (var i = 0; i < items.length; i++) {
+      var icon = items[i].type === 'card' ? '🃏' : '💎';
+      html += '<div style="color:var(--gold);font-size:18px;margin:4px 0">' + icon + ' ' + items[i].name + '</div>';
+    }
+    html += '<button style="margin-top:20px" id="btn-unlock-ok">确定</button></div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+    document.getElementById('btn-unlock-ok').addEventListener('click', function(){
+      document.getElementById('unlock-popup').remove();
+    });
   }
 
   return { showVictory, showDeath };
