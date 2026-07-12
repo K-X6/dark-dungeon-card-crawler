@@ -28,6 +28,16 @@ window.Combat = (() => {
 
     // 遗物 onBattleStart
     window.Relic.triggerHook('onBattleStart', {});
+    // Process event buffs (addBuff effects)
+    if (state.buffs) {
+      for (var bi = 0; bi < state.buffs.length; bi++) {
+        var b = state.buffs[bi];
+        if (b.buffType === 'strength') state.strength += b.value;
+        else if (b.buffType === 'startArmor') state.armor += b.value;
+        b.turns = (b.turns || 999) - 1;
+      }
+      state.buffs = state.buffs.filter(function(b){ return b.turns > 0; });
+    }
 
     // Draw starting hand
     window.Deck.drawCards(3);
