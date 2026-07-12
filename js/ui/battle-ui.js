@@ -2,8 +2,12 @@
   var selectedCardIndex = null;
 
   function show() {
-    render(window.GameEngine.getState());
-    showMulligan(window.GameEngine.getState());
+    var st=window.GameEngine.getState();
+    var node=st.map?st.map[st.currentNode]:null;
+    if(node&&node.type==='boss')document.body.classList.add('boss-fight');
+    else document.body.classList.remove('boss-fight');
+    render(st);
+    showMulligan(st);
     try {
       if (!localStorage.getItem('darkdungeon_tutorial')) {
         localStorage.setItem('darkdungeon_tutorial', '1');

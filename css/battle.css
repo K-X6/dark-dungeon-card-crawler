@@ -341,3 +341,9 @@ body.player-hit .battle-container {
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+body.boss-fight { animation: bossPulse 3s ease-in-out infinite; }
+@keyframes bossPulse {
+  0%, 100% { box-shadow: inset 0 0 50px rgba(200,40,40,0); }
+  50% { box-shadow: inset 0 0 80px rgba(200,40,40,0.25); }
+}

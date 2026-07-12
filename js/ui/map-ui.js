@@ -125,7 +125,7 @@ window.MapUI = (() => {
       usedNames.push(enemy.name);
       const e = {
         name: enemy.name, hp: enemy.hp[diffIdx], maxHp: enemy.hp[diffIdx],
-        damage: enemy.damage[diffIdx], intents: enemy.intents.slice(),
+        damage: enemy.damage[diffIdx], intents: (enemy.altIntents && Math.random()<0.5 ? enemy.altIntents : enemy.intents).slice(),
         poison: 0, burn: 0, effects: {}
       };
       if (state.difficulty === 'hard' && enemy.hardVariations && enemy.hardVariations.length > 0) {
