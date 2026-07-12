@@ -139,6 +139,23 @@ window.MapUI = (() => {
       }
     }
 
+    var nodeTypeName = node.type;
+    if (nodeTypeName === 'elite' || nodeTypeName === 'boss') {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:500';
+      var label = nodeTypeName === 'boss' ? '👉 BOSS战' : '💀 精英战';
+      var nameHtml = nodeTypeName === 'boss' ? (node.bossId || '') : '';
+      overlay.innerHTML = '<div style="color:var(--accent);font-size:36px;text-shadow:0 0 20px var(--accent);text-align:center">' + label + '</div>' +
+        (nameHtml ? '<div style="color:var(--danger);font-size:24px;margin-top:12px">' + nameHtml + '</div>' : '') +
+        '<div style="color:var(--text-dim);font-size:14px;margin-top:20px">点击任意处开始</div>';
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function() {
+        overlay.remove();
+        window.Combat.startBattle(enemies);
+        window.BattleUI.show();
+      });
+      return;
+    }
     window.Combat.startBattle(enemies);
     window.BattleUI.show();
   }
