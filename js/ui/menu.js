@@ -30,7 +30,10 @@ window.Menu = (() => {
       </div>
     `;
 
-    document.getElementById('btn-new').addEventListener('click', showModeSelect);
+    document.getElementById('btn-new').addEventListener('click', function(){
+      if (hasSave && !confirm('当前有未完成的对局，开始新游戏将丢失进度。确定？')) return;
+      showModeSelect();
+    });
     if (hasSave) {
       document.getElementById('btn-continue').addEventListener('click', continueGame);
     document.getElementById('btn-settings').addEventListener('click', showSettings);
