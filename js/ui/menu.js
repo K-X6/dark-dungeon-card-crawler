@@ -137,4 +137,6 @@ window.Menu = (() => {
     document.getElementById('btn-cancel').addEventListener('click', function(){ show(); });
   }
 
+  return { show };
 })();
+
