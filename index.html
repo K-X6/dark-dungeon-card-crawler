@@ -116,8 +116,17 @@
       setTimeout(function(){t.remove();}, 2600);
     }
 
-    // 启动菜单
-    window.Menu.show();
+    // Debug
+    try {
+      var app=document.getElementById('app');
+      if(!app) app.innerHTML='ERROR: app div not found';
+      else if(!window.Menu) app.innerHTML='ERROR: window.Menu is '+(typeof window.Menu);
+      else if(!window.Menu.show) app.innerHTML='ERROR: Menu has no show method. Keys: '+Object.keys(window.Menu).join(',');
+      else {
+        window.Menu.show();
+        if(app.innerHTML.length<10) app.innerHTML='ERROR: Menu.show() ran but produced empty content';
+      }
+    } catch(e) { document.getElementById('app').innerHTML='JS ERROR: '+e.message; }
   </script>
 </body>
 </html>
