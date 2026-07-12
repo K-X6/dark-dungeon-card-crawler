@@ -93,12 +93,21 @@
       if (idx >= 0) window.Deck.addCardToDeck(options[idx]);
 
       // 药水掉落 25%
+      var potionDrop = null;
       if (Math.random() < 0.25) {
         const potion = window.getRandomPotion('common');
-        if (potion && state.potions.length < 3) state.potions.push(JSON.parse(JSON.stringify(potion)));
+        if (potion && state.potions.length < 3) { state.potions.push(JSON.parse(JSON.stringify(potion))); potionDrop = potion; }
       }
 
         window.MapUI.show();
+    }
+
+    function showRewardToast(text) {
+      var t = document.createElement('div');
+      t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:2px solid var(--gold);color:var(--gold);padding:10px 24px;border-radius:8px;z-index:500;font-size:16px;animation:toastIn 2.5s ease forwards';
+      t.textContent = text;
+      document.body.appendChild(t);
+      setTimeout(function(){t.remove();}, 2600);
     }
 
     // 启动菜单
