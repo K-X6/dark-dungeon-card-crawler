@@ -421,7 +421,8 @@
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:600px">';
     for (var i = 0; i < drawCards.length; i++) {
       var c = drawCards[i];
-      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px" title="' + describeCard(c) + '">' + c.name + ' (' + c.cost + '费) ' + describeEffects(c.effects) + '</div>';
+      var rc = c.rarity==='legendary'?'border-color:#d4a017;box-shadow:0 0 4px rgba(212,160,23,0.3)':c.rarity==='rare'?'border-color:#5b7a9a':'';
+      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px;'+rc+'" title="' + describeCard(c) + '">' + c.name + ' (' + c.cost + '费) ' + describeEffects(c.effects) + '</div>';
     }
     if (drawCards.length === 0) html += '<span style="color:var(--text-dim)">空</span>';
     html += '</div>';
@@ -429,7 +430,8 @@
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:600px">';
     for (var i = 0; i < discardCards.length; i++) {
       var d = discardCards[i];
-      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px;opacity:0.7" title="' + describeCard(d) + '">' + d.name + ' (' + d.cost + '费) ' + describeEffects(d.effects) + '</div>';
+      var rd = d.rarity==='legendary'?'border-color:#d4a017;box-shadow:0 0 4px rgba(212,160,23,0.3)':d.rarity==='rare'?'border-color:#5b7a9a':'';
+      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px;opacity:0.7;'+rd+'" title="' + describeCard(d) + '">' + d.name + ' (' + d.cost + '费) ' + describeEffects(d.effects) + '</div>';
     }
     if (discardCards.length === 0) html += '<span style="color:var(--text-dim)">空</span>';
     html += '</div>';
