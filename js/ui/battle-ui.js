@@ -16,6 +16,11 @@
     html += '<div class="stat"><span class="hp-value">❤ ' + state.hp + '/' + state.maxHp + '</span></div>';
     html += '<div class="stat"><span class="armor-value">🛡 ' + state.armor + '</span></div>';
     html += '<div class="stat"><span class="energy-value">⚡ ' + state.energy + '/' + state.maxEnergy + '</span></div>';
+    html += '<div class="stat" style="font-size:14px;color:var(--text-dim)">回合 ' + (window.Combat.getTurnCount()||1) + '</div>';
+    var eff = state.effects || {};
+    if (eff.weak > 0) html += '<span style="background:#8b4513;color:#fff;padding:1px 6px;border-radius:8px;font-size:12px;margin:0 2px" title="伤害-50%，剩'+eff.weak+'回合">💤'+eff.weak+'</span>';
+    if (eff.frail > 0) html += '<span style="background:#4a0a4a;color:#fff;padding:1px 6px;border-radius:8px;font-size:12px;margin:0 2px" title="护甲-50%，剩'+eff.frail+'回合">💥'+eff.frail+'</span>';
+    if (eff.vulnerable > 0) html += '<span style="background:#8b0000;color:#fff;padding:1px 6px;border-radius:8px;font-size:12px;margin:0 2px" title="受伤+50%，剩'+eff.vulnerable+'回合">💔'+eff.vulnerable+'</span>';
     if (state.strength > 0) html += '<div class="stat">💪 ' + state.strength + '</div>';
     html += '</div></div>';
     html += '<div class="enemy-area">';
@@ -39,6 +44,9 @@
       html += renderCard(state.hand[hi], hi, state);
     }
     html += '</div>';
+    var deckCount = state.deck ? state.deck.length : 0;
+    var discardCount = state.discardPile ? state.discardPile.length : 0;
+    html += '<div style="text-align:center;color:var(--text-dim);font-size:12px;margin:4px 0">📦抽牌堆:' + deckCount + ' | 🗄弃牌堆:' + discardCount + '</div>';
     html += '<div class="battle-controls">';
     html += '<div class="potion-bar">';
     var maxSlots = (state.relics.find(function(r){return r.effect&&r.effect.potionSlots;}) ? 4 : 3);
@@ -234,8 +242,6 @@
     if (base === 'aoePoison' || base === 'aoe') return '💥';
     if (base === 'charge') return '⚡';
     if (base === 'ultimate') return '☠';
-    return '❓';
-  }  }
 
   function getIntentText(enemy) {
     var intent = (enemy.intents && enemy.intents[enemy.intentIndex % enemy.intents.length]) || '';
