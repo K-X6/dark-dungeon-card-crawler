@@ -66,7 +66,8 @@ window.Deck = (() => {
     // 应用遗物费用减免
     if (state.relics) {
       for (const relic of state.relics) {
-        if (relic.effect && relic.effect.costReduceAll) {
+        if (relic.effect && relic.effect.abilityCostReduce && card.type === 'ability') { cost -= relic.effect.abilityCostReduce; }
+      if (relic.effect && relic.effect.costReduceAll) {
           cost -= relic.effect.costReduceAll;
         }
       }
