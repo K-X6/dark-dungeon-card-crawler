@@ -131,7 +131,7 @@ window.EventUI = (() => {
 
   async function shopBuy(cost, type, rarity) {
     const state = window.GameEngine.getState();
-    if (state.hp < cost) return;
+    if (state.hp < cost) { var app=document.getElementById('app'); app.style.animation='none'; app.offsetHeight; app.style.animation='shopFlash 0.3s ease'; setTimeout(function(){app.style.animation='';},300); return; }
     state.hp -= cost;
     if (type === 'card') {
       const pool = window.CARDS.filter(c => c.rarity === rarity && c.type !== 'curse' && (c.class === state.class || c.class === 'curse'));
