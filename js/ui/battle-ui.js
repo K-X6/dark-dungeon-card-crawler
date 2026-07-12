@@ -378,6 +378,9 @@
   function sfxVictory() { playSound(523, 'triangle', 0.15, 0.06); setTimeout(function(){playSound(659,'triangle',0.15,0.06);},150); setTimeout(function(){playSound(784,'triangle',0.3,0.08);},300); }
   function sfxTurnEnd() { playSound(200, 'sine', 0.1, 0.03); }
   function sfxWeakHit() { playSound(80, 'sawtooth', 0.25, 0.08); }
+  function sfxDeath() { playSound(200, 'sawtooth', 0.1, 0.05); setTimeout(function(){playSound(150,'sawtooth',0.15,0.05);},120); setTimeout(function(){playSound(80,'sine',0.5,0.06);},300); }
+  function sfxShop() { playSound(600, 'triangle', 0.08, 0.03); setTimeout(function(){playSound(800,'triangle',0.08,0.03);},80); }
+  function sfxUpgrade() { playSound(400, 'triangle', 0.1, 0.04); setTimeout(function(){playSound(600,'triangle',0.1,0.04);},100); setTimeout(function(){playSound(900,'triangle',0.15,0.05);},200); }
 
   function showDeckViewer() {
     var state = window.GameEngine.getState();
@@ -388,7 +391,7 @@
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:600px">';
     for (var i = 0; i < drawCards.length; i++) {
       var c = drawCards[i];
-      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px">' + c.name + ' (' + c.cost + '费)</div>';
+      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px" title="' + describeCard(c) + '">' + c.name + ' (' + c.cost + '费) ' + describeEffects(c.effects) + '</div>';
     }
     if (drawCards.length === 0) html += '<span style="color:var(--text-dim)">空</span>';
     html += '</div>';
@@ -396,7 +399,7 @@
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:600px">';
     for (var i = 0; i < discardCards.length; i++) {
       var d = discardCards[i];
-      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px;opacity:0.7">' + d.name + ' (' + d.cost + '费)</div>';
+      html += '<div style="background:var(--surface);border:1px solid var(--card-border);padding:6px 10px;border-radius:4px;font-size:13px;opacity:0.7" title="' + describeCard(d) + '">' + d.name + ' (' + d.cost + '费) ' + describeEffects(d.effects) + '</div>';
     }
     if (discardCards.length === 0) html += '<span style="color:var(--text-dim)">空</span>';
     html += '</div>';
