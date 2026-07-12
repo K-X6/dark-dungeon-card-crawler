@@ -289,3 +289,11 @@
   border-color: var(--accent-glow);
   box-shadow: 0 0 8px rgba(192,57,43,0.3);
 }
+
+#btn-end-turn:not(:disabled) {
+  animation: btnPulse 2s ease-in-out infinite;
+}
+@keyframes btnPulse {
+  0%, 100% { box-shadow: 0 0 4px var(--accent); }
+  50% { box-shadow: 0 0 16px var(--accent-glow); }
+}
