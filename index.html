@@ -48,6 +48,10 @@
       window.MapUI.show();
     });
 
+    window.GameEngine.on('floorEnter', function(){
+      var t=document.createElement('div');t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);color:var(--text-dim);font-size:12px;z-index:400;animation:toastIn 1.5s ease forwards';t.textContent='💾 已保存';document.body.appendChild(t);setTimeout(function(){t.remove();},1600);
+    });
+
     window.GameEngine.on('playerDeath', () => {
       window.ResultUI.showDeath();
     });
