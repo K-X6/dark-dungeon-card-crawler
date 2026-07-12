@@ -20,6 +20,7 @@ window.Menu = (() => {
       '<div class="subtitle">卡牌爬塔</div>' +
       (bestScore !== '0' ? '<div style="color:var(--gold);font-size:14px;margin-bottom:4px">🏆 最高分: ' + bestScore + '</div>' : '') +
       (streak > 0 ? '<div style="color:var(--danger);font-size:14px;margin-bottom:12px">🔥 连胜: ' + streak + '</div>' : '') +
+      '<div style="position:absolute;bottom:20px;right:20px"><button id="btn-settings" style="font-size:20px;padding:6px 10px;background:transparent;border:none;color:var(--text-dim)" title="设置">⚙</button></div>' +
       '<div class="menu-options">'
           <button id="btn-new" class="btn-primary">新游戏</button>
           <button id="btn-continue" ${hasSave ? '' : 'disabled'}>继续游戏</button>
@@ -30,6 +31,7 @@ window.Menu = (() => {
     document.getElementById('btn-new').addEventListener('click', showModeSelect);
     if (hasSave) {
       document.getElementById('btn-continue').addEventListener('click', continueGame);
+    document.getElementById('btn-settings').addEventListener('click', showSettings);
     }
   }
 
