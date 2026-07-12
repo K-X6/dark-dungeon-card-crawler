@@ -78,6 +78,11 @@ window.ResultUI = (() => {
 
     // 解锁
     unlockCheck(state.class);
+    // Increment win streak
+    try {
+      var streak = parseInt(localStorage.getItem('darkdungeon_streak') || '0') + 1;
+      localStorage.setItem('darkdungeon_streak', '' + streak);
+    } catch(e) {}
 
     const app = document.getElementById('app');
     app.innerHTML = `
