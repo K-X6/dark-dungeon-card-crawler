@@ -1,4 +1,4 @@
-// 暗黑地牢卡牌爬塔 — 主菜单
+﻿// 暗黑地牢卡牌爬塔 — 主菜单
 window.Menu = (() => {
   let selectedMode = null;
   let selectedDifficulty = null;
@@ -102,12 +102,26 @@ window.Menu = (() => {
   }
 
   function continueGame() {
-    const state = window.GameEngine.load();
-    if (state) {
-      document.getElementById('app').innerHTML = '<div class="menu-screen"><h1>继续游戏...</h1></div>';
-      window.GameEngine.emit('gameStart', { class: state.class, mode: state.mode, difficulty: state.difficulty });
-    }
+    var state = window.GameEngine.load();
+    if (!state) return;
+    var classNames = {warrior:'战士', mage:'法师', rogue:'盗贼'};
+    var chapterNames = ['','墓穴','深渊','王座之间'];
+    var app = document.getElementById('app');
+    app.innerHTML = '<div class="menu-screen">' +
+      '<h1 style="font-size:28px">继续冒险</h1>' +
+      '<div style="background:var(--surface);border:2px solid var(--accent);padding:20px;margin:20px 0;text-align:left">' +
+      '<div style="font-size:20px;color:var(--accent);margin-bottom:8px">' + (classNames[state.class]||state.class) + '</div>' +
+      '<div>HP: <span style="color:var(--danger)">' + state.hp + '/' + state.maxHp + '</span></div>' +
+      '<div>第 ' + state.chapter + '章: ' + (chapterNames[state.chapter]||'') + ' 第' + state.floor + '层</div>' +
+      '<div>牌组: ' + (state.deck?state.deck.length:0) + '张 | 遗物: ' + (state.relics?state.relics.length:0) + '个</div>' +
+      '</div>' +
+      '<button id="btn-resume" class="btn-primary">继续</button>' +
+      '<button id="btn-cancel" style="margin-top:8px">返回</button></div>';
+    document.getElementById('btn-resume').addEventListener('click', function(){
+      window.GameEngine.emit('gameStart', {});
+    });
+    document.getElementById('btn-cancel').addEventListener('click', function(){ show(); });
   }
+    const state = window.GameEngine.load();
 
-  return { show };
 })();
