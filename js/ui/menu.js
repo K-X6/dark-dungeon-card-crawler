@@ -131,6 +131,5 @@ window.Menu = (() => {
     });
     document.getElementById('btn-cancel').addEventListener('click', function(){ show(); });
   }
-    const state = window.GameEngine.load();
 
 })();
