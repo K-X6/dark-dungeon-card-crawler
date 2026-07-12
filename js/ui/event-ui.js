@@ -179,7 +179,7 @@ window.EventUI = (() => {
 
     document.getElementById('rest-upgrade').addEventListener('click', async () => {
       if (upgradable.length === 0) return;
-      const idx = await window.showPicker(upgradable.map(c => ({label: c.name})), {title: '选择升级', allowSkip: false});
+      const idx = await window.showPicker(upgradable.map(function(c){ var up=c.upgraded&&c.upgraded.effects?c.upgraded.effects.map(function(e){return e.value||e.layers||''}).join('/'):''; return {label:c.name+(up?' →'+up:''),description:'升级后: '+(up||'数值提升')}; }), {title: '选择升级', allowSkip: false});
       if (idx >= 0) {
         const card = upgradable[idx];
         card._upgraded = true;
