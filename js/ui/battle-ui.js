@@ -40,10 +40,10 @@
     html += '<div class="enemy-area">';
     for (var ei = 0; ei < enemies.length; ei++) {
       var e = enemies[ei];
+      if (e.hp <= 0) continue;
       var sh = e._shield > 0 ? ' (🛡' + e._shield + ')' : '';
       var vr = e.variation ? ' [' + e.variation + ']' : '';
-      var dc = e.hp <= 0 ? ' dying' : '';
-      html += '<div class="enemy-card' + dc + '" data-enemy="' + ei + '" id="enemy-' + ei + '">';
+      html += '<div class="enemy-card" data-enemy="' + ei + '" id="enemy-' + ei + '">';
       html += '<h3>' + e.name + vr + '</h3>';
       html += '<div>HP ' + e.hp + '/' + e.maxHp + sh + '</div>';
       html += '<div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:' + Math.max(0, e.hp/e.maxHp*100) + '%"></div></div>';
@@ -145,7 +145,18 @@
       }
       var hpBefore = window.GameEngine.getState().hp;
       window.Combat.endPlayerTurn();
-      if (window.GameEngine.getState().hp < hpBefore) { document.body.classList.add('player-hit'); setTimeout(function(){document.body.classList.remove('player-hit');},300); }
+      var stateAfterTurn = window.GameEngine.getState();
+      if (stateAfterTurn.hp <= 0) {
+        selectedCardIndex = null;
+        sfxDeath();
+        return;
+      }
+      if (window.Combat.getPhase() === 'BATTLE_END') {
+        selectedCardIndex = null;
+        sfxVictory();
+        return;
+      }
+      if (stateAfterTurn.hp < hpBefore) { document.body.classList.add('player-hit'); setTimeout(function(){document.body.classList.remove('player-hit');},300); }
       var enemiesAfter = window.Combat.getEnemies();
       if (enemiesAfter.every(function(e){return e.hp<=0;})) sfxVictory();
       else if (window.GameEngine.getState().hp > 0) sfxTurnEnd();
@@ -196,7 +207,13 @@
           }
           var energyEl = document.querySelector('.energy-value');
           if (energyEl) { energyEl.classList.add('pulse'); setTimeout(function(){energyEl.classList.remove('pulse');}, 300); }
+          var aliveBefore = window.Combat.getEnemies().map(function(e){ return e.hp > 0; });
           window.Combat.playCard(selectedCardIndex, parseInt(enemyEl.dataset.enemy));
+          if (window.GameEngine.getState().hp <= 0) {
+            selectedCardIndex = null;
+            sfxDeath();
+            return;
+          }
           if (enemyEl) {
             var rect = enemyEl.getBoundingClientRect();
             enemyEl.classList.add('hit');
@@ -205,10 +222,20 @@
             setTimeout(function(){enemyEl.classList.remove('hit');}, 300);
           }
           selectedCardIndex = null;
-          var allDead = window.Combat.getEnemies().every(function(e){return e.hp <= 0;});
+          var enemiesAfterAttack = window.Combat.getEnemies();
+          var defeatedNow = false;
+          for (var di = 0; di < enemiesAfterAttack.length; di++) {
+            if (aliveBefore[di] && enemiesAfterAttack[di].hp <= 0) {
+              defeatedNow = true;
+              var defeatedEl = document.getElementById('enemy-' + di);
+              if (defeatedEl) defeatedEl.classList.add('dying');
+            }
+          }
+          if (defeatedNow) sfxEnemyDefeated();
+          var allDead = enemiesAfterAttack.every(function(e){return e.hp <= 0;});
         if (allDead) { document.body.classList.add('deathblow'); setTimeout(function(){document.body.classList.remove('deathblow');},500); }
-          if (allDead) { setTimeout(function(){window.Combat.endPlayerTurn();}, 300); }
-          else { setTimeout(function(){refresh();}, 200); }
+          if (allDead) { setTimeout(function(){window.Combat.endPlayerTurn();}, defeatedNow ? 600 : 300); }
+          else { setTimeout(function(){refresh();}, defeatedNow ? 620 : 200); }
         });
       })(enemies[i], parseInt(enemies[i].dataset.enemy));
     }
@@ -307,6 +334,8 @@
     if (base === 'aoePoison' || base === 'aoe') return '💥';
     if (base === 'charge') return '⚡';
     if (base === 'ultimate') return '☠';
+    return '？';
+  }
 
   function getIntentText(enemy) {
     var intent = (enemy.intents && enemy.intents[enemy.intentIndex % enemy.intents.length]) || '';
@@ -329,7 +358,7 @@
     if (base === 'charge') return '蓄力 +' + val;
     if (base === 'ultimate') return '必杀技!';
     return intent;
-  }  }
+  }
 
   function showMulligan(state) {
     var overlay = document.createElement('div');
@@ -452,6 +481,9 @@
 
   function refresh() {
     var state = window.GameEngine.getState();
+    // playerDeath renders ResultUI synchronously; any delayed battle animation
+    // callback must leave that terminal screen intact.
+    if (!state || state.hp <= 0 || window.Combat.getPhase() === 'BATTLE_END') return;
     render(state);
     // Flash HP/armor if changed
     if (state.hp !== _prevHp && _prevHp >= 0) {

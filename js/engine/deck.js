@@ -13,7 +13,9 @@ window.Deck = (() => {
         state.deck = state.discardPile;
         state.discardPile = [];
       }
-      state.hand.push(state.deck.pop());
+      const card = state.deck.pop();
+      if (card) delete card._curseTriggered;
+      state.hand.push(card);
       drawn++;
     }
   }
@@ -79,6 +81,12 @@ window.Deck = (() => {
           cost -= buff.value;
         }
       }
+    }
+    if (state.combatBuffs && state.combatBuffs.costReduce) {
+      cost -= state.combatBuffs.costReduce;
+    }
+    if (state.combatBuffs && state.combatBuffs.firstAttackFree && card.type === 'attack') {
+      cost = 0;
     }
     return Math.max(0, cost);
   }

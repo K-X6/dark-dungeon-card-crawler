@@ -31,6 +31,10 @@
     async function handleBattleVictory() {
       const state = window.GameEngine.getState();
       const node = state.map[state.currentNode];
+      state.deck = [...(state.deck || []), ...(state.hand || []), ...(state.discardPile || [])];
+      state.hand = [];
+      state.discardPile = [];
+      window.Deck.shuffleDeck();
       
       window.Relic.triggerHook('onPostBattle', {});
 
@@ -40,6 +44,7 @@
         state.defeatedBossIds.push(node.bossId);
         
         if (window.Map.isChapterEnd(node)) {
+          window.Map.completeCurrentNode();
           const totalChapters = state.mode === 'mini' ? 1 : state.mode === 'short' ? 2 : 3;
           if (state.chapter >= totalChapters) {
             // 通关
@@ -53,19 +58,24 @@
 
       // 普通/精英战斗：选牌
       const pool = window.CARDS.filter(c => c.rarity === 'common' && c.type !== 'curse' && (c.class === state.class));
+      const rewardCount = state.relics.some(r => r.effect && r.effect.cardChoice) ? 4 : 3;
       const options = [];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < rewardCount && pool.length > 0; i++) {
         options.push(pool[Math.floor(Math.random() * pool.length)]);
       }
-      const idx = await window.showPicker(options.map(c => ({label: `${c.name} (${c.cost}费)`})), {title: '战后选牌', allowSkip: true});
-      if (idx >= 0) window.Deck.addCardToDeck(options[idx]);
+      if (options.length > 0) {
+        const idx = await window.showPicker(options.map(c => ({label: `${c.name} (${c.cost}费)`})), {title: '战后选牌', allowSkip: true});
+        if (idx >= 0) window.Deck.addCardToDeck(options[idx]);
+      }
 
       // 药水掉落 25%
-      if (Math.random() < 0.35) {
+      const potionBonus = state.relics.reduce((sum, relic) => sum + ((relic.effect && relic.effect.potionDropBonus) || 0), 0);
+      if (Math.random() < Math.min(1, 0.35 + potionBonus / 100)) {
         const potion = window.getRandomPotion('common');
         if (potion && state.potions.length < 3) state.potions.push(JSON.parse(JSON.stringify(potion)));
       }
 
+        window.Map.completeCurrentNode();
         window.MapUI.show();
     }
 

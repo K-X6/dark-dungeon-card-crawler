@@ -59,6 +59,7 @@ window.GameEngine = (() => {
     }
 
     _state = {
+      saveVersion: 2,
       class: cls,
       mode: mode,
       difficulty: difficulty,
@@ -108,6 +109,15 @@ window.GameEngine = (() => {
       const json = localStorage.getItem('darkdungeon_save');
       if (!json) return null;
       _state = JSON.parse(json);
+      // Version 1 marked a room complete as soon as it was entered. Reopen the
+      // current room once so old saves cannot skip a failed BOSS encounter.
+      if (!_state.saveVersion) {
+        if (Array.isArray(_state.pathTaken)) {
+          _state.pathTaken = _state.pathTaken.filter(index => index !== _state.currentNode);
+        }
+        _state.saveVersion = 2;
+        localStorage.setItem('darkdungeon_save', JSON.stringify(_state));
+      }
       emit('gameLoaded', { state: _state });
       return _state;
     } catch(e) {

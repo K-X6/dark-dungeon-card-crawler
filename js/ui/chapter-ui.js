@@ -54,6 +54,7 @@ window.ChapterUI = (() => {
       if (nextChapter) {
         state.map = nextChapter.nodes;
         state.currentNode = 0;
+        state.pathTaken = [];
         state.floor = nextChapter.nodes[0].floor;
         state.enteringNewChapter = true;
         document.body.dataset.chapter = state.chapter;
@@ -117,6 +118,8 @@ window.ResultUI = (() => {
     document.body.classList.add('death-vignette');
     try { var d=parseInt(localStorage.getItem('darkdungeon_deaths')||'0')+1; localStorage.setItem('darkdungeon_deaths',''+d); } catch(e){}
     const state = window.GameEngine.getState();
+    let canRetry = false;
+    try { canRetry = !!localStorage.getItem('darkdungeon_save'); } catch(e) {}
     const app = document.getElementById('app');
     app.innerHTML = `
       <div class="overlay" style="animation:fadeIn 0.5s">
@@ -128,12 +131,22 @@ window.ResultUI = (() => {
             <div>击杀敌人数：${state.enemiesDefeated} | 击败 BOSS：${state.bossesDefeated}</div>
             <div>牌组数量：${window.Deck.getDeckSize()}</div>
           </div>
-          <button id="btn-menu">返回主菜单</button>
+          ${canRetry ? '<button id="btn-retry" class="btn-primary">重新挑战当前节点</button>' : ''}
+          <button id="btn-menu" style="margin-top:8px">结束本局并返回主菜单</button>
         </div>
       </div>
     `;
+    if (canRetry) document.getElementById('btn-retry').addEventListener('click', () => {
+      const restored = window.GameEngine.load();
+      if (!restored) { window.Menu.show(); return; }
+      restored.pathTaken = (restored.pathTaken || []).filter(index => index !== restored.currentNode);
+      window.GameEngine.save();
+      document.body.classList.remove('death-vignette');
+      window.GameEngine.emit('gameStart', {retry:true});
+    });
     document.getElementById('btn-menu').addEventListener('click', () => {
       localStorage.removeItem('darkdungeon_save');
+      document.body.classList.remove('death-vignette');
       window.Menu.show();
     });
   }

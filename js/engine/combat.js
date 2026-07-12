@@ -11,11 +11,23 @@ window.Combat = (() => {
   // === 战斗流程 ===
   function startBattle(enemies) {
     const state = window.GameEngine.getState();
+    // Reassemble the persistent deck before clearing transient battle piles.
+    state.deck = [...(state.deck || []), ...(state.hand || []), ...(state.discardPile || [])];
     state.hand = [];
     state.discardPile = [];
     state.armor = 0;
+    state.strength = 0;
     state.effects = {};
+    state.combatBuffs = {};
+    state.nextTurnEnergy = 0;
+    state.nextTurnDraw = 0;
+    state.extraTurn = false;
+    state._turnStrength = 0;
+    state._battleEnergyBonus = 0;
+    state._hasDealtDamage = false;
     if (!state.buffs) state.buffs = [];
+    window.Deck.shuffleDeck();
+    state.energy = state.maxEnergy;
     _turnCount = 0;
     _enemies = enemies.map(e => ({
       ...e,
@@ -28,16 +40,18 @@ window.Combat = (() => {
 
     // 遗物 onBattleStart
     window.Relic.triggerHook('onBattleStart', {});
-    // Process event buffs (addBuff effects)
-    if (state.buffs) {
-      for (var bi = 0; bi < state.buffs.length; bi++) {
-        var b = state.buffs[bi];
-        if (b.buffType === 'strength') state.strength += b.value;
-        else if (b.buffType === 'startArmor') state.armor += b.value;
-        b.turns = (b.turns || 999) - 1;
-      }
-      state.buffs = state.buffs.filter(function(b){ return b.turns > 0; });
+    // Process buffs granted by events for a limited number of battles.
+    const persistentBuffs = [];
+    for (const buff of state.buffs) {
+      if (buff.type !== 'battleStart') { persistentBuffs.push(buff); continue; }
+      if (buff.buffType === 'strength') state.strength += buff.value;
+      else if (buff.buffType === 'startArmor') state.armor += buff.value;
+      else if (buff.buffType === 'bonusEnergy') state._battleEnergyBonus += buff.value;
+      buff.turns = (buff.turns || 1) - 1;
+      if (buff.turns > 0) persistentBuffs.push(buff);
     }
+    state.buffs = persistentBuffs;
+    state.energy += state._battleEnergyBonus;
 
     // Draw starting hand
     window.Deck.drawCards(3);
@@ -47,15 +61,30 @@ window.Combat = (() => {
 
   function endPlayerTurn() {
     const state = window.GameEngine.getState();
-    // Clear per-turn buffs (弱化/易伤等持续回合的状态在 applyXxx 中管理)
+    if (_enemies.every(enemy => enemy.hp <= 0)) {
+      _phase = 'BATTLE_END';
+      window.GameEngine.emit('battleVictory', {});
+      return;
+    }
+    decayPlayerEffects();
+    triggerCursesInHand();
+    if (state.hp <= 0) { _phase = 'BATTLE_END'; return; }
     window.Deck.discardHand();
     if (!state.retainArmor) state.armor = 0;
     state.retainArmor = false;
-    state.energy = state.maxEnergy;
+    clearTurnBonuses();
+
+    if (state.extraTurn) {
+      state.extraTurn = false;
+      beginPlayerTurn();
+      return;
+    }
+
     _phase = 'ENEMY_TURN';
     executeEnemyTurn();
     // Check if all enemies are dead
     if (_enemies.every(e => e.hp <= 0)) {
+      _phase = 'BATTLE_END';
       window.GameEngine.emit('battleVictory', {});
       return;
     }
@@ -69,52 +98,108 @@ window.Combat = (() => {
       if (enemy.effects && enemy.effects.stun) {
         enemy.effects.stun = false;
         window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'stunned' });
+        decayEnemyEffects(enemy);
         continue;
       }
       executeEnemyIntent(enemy);
       if (window.GameEngine.getState().hp <= 0) break;
+      decayEnemyEffects(enemy);
     }
+    if (window.GameEngine.getState().hp <= 0) { _phase = 'BATTLE_END'; return; }
     _phase = 'DOT_PHASE';
     tickAllDot();
-    _phase = 'PLAYER_TURN';
+    if (_enemies.every(e => e.hp <= 0)) {
+      _phase = 'BATTLE_END';
+      window.GameEngine.emit('battleVictory', {});
+      return;
+    }
     _turnCount++;
     window.GameEngine.emit('turnStart', { turn: _turnCount });
-    window.GameEngine.emit('turnStart', { turn: _turnCount });
-    const s2 = window.GameEngine.getState();
-    // Decay player status effects
-    if (s2.effects) {
-      var keys = ['weak','frail','vulnerable'];
-      for (var ki = 0; ki < keys.length; ki++) {
-        var k = keys[ki];
-        if (s2.effects[k] > 0) { s2.effects[k]--; if (s2.effects[k] <= 0) delete s2.effects[k]; }
+    window.Relic.triggerHook('onTurnStart', { turn: _turnCount });
+    beginPlayerTurn();
+  }
+
+  function beginPlayerTurn() {
+    const state = window.GameEngine.getState();
+    _phase = 'PLAYER_TURN';
+    state.energy = state.maxEnergy + (state._battleEnergyBonus || 0) + (state.nextTurnEnergy || 0);
+    state.nextTurnEnergy = 0;
+
+    const buffs = state.combatBuffs || {};
+    if (buffs.armorPerTurn) gainArmor(buffs.armorPerTurn);
+    if (buffs.armorAndPoisonPerTurn) {
+      gainArmor(buffs.armorAndPoisonPerTurn);
+      for (const enemy of _enemies) if (enemy.hp > 0) applyPoison(enemy, buffs.armorAndPoisonPerTurn);
+    }
+    if (buffs.regen) {
+      state.hp = Math.min(state.maxHp, state.hp + buffs.regen.value);
+      buffs.regen.turns--;
+      if (buffs.regen.turns <= 0) delete buffs.regen;
+    }
+
+    const drawCount = 3 + (buffs.drawPerTurn || 0) + (state.nextTurnDraw || 0);
+    state.nextTurnDraw = 0;
+    window.Deck.drawCards(Math.max(0, drawCount));
+
+    if (buffs.poisonDamageMultiplier && buffs.poisonDamageMultiplier.turns > 0) {
+      buffs.poisonDamageMultiplier.turns--;
+      if (buffs.poisonDamageMultiplier.turns <= 0) delete buffs.poisonDamageMultiplier;
+    }
+  }
+
+  function clearTurnBonuses() {
+    const state = window.GameEngine.getState();
+    if (state._turnStrength) state.strength -= state._turnStrength;
+    state._turnStrength = 0;
+    if (state.combatBuffs) delete state.combatBuffs.costReduce;
+  }
+
+  function triggerCursesInHand() {
+    const state = window.GameEngine.getState();
+    for (const card of state.hand) {
+      if (card.type !== 'curse' || !card.curseEffect || card._curseTriggered) continue;
+      card._curseTriggered = true;
+      const effect = card.curseEffect;
+      if (effect.type === 'loseHpFlat') dealDamageToPlayer(effect.value);
+      else if (effect.type === 'nextTurnEnergy') state.nextTurnEnergy += effect.value;
+      else if (effect.type === 'nextTurnDraw') state.nextTurnDraw += effect.value;
+      else if (effect.type === 'weak') { state.effects.weak = Math.max(state.effects.weak || 0, effect.turns || 1); }
+      else if (effect.type === 'vulnerable') { state.effects.vulnerable = Math.max(state.effects.vulnerable || 0, effect.turns || 1); }
+    }
+  }
+
+  function decayEnemyEffects(enemy) {
+    if (!enemy.effects) return;
+    for (const key of ['weak', 'vulnerable']) {
+      if (enemy.effects[key] > 0) {
+        enemy.effects[key]--;
+        if (enemy.effects[key] <= 0) delete enemy.effects[key];
       }
     }
-    // Process regen buffs
-    if (s2.buffs && s2.buffs.length > 0) {
-      const remaining = [];
-      for (const b of s2.buffs) {
-        if (b.type === 'regen') {
-          s2.hp = Math.min(s2.maxHp, s2.hp + b.value);
-          b.turns--;
-          if (b.turns > 0) remaining.push(b);
-        } else { remaining.push(b); }
+  }
+
+  function decayPlayerEffects() {
+    const state = window.GameEngine.getState();
+    if (!state.effects) return;
+    for (const key of ['weak', 'frail', 'vulnerable']) {
+      if (state.effects[key] > 0) {
+        state.effects[key]--;
+        if (state.effects[key] <= 0) delete state.effects[key];
       }
-      s2.buffs = remaining;
     }
-    window.Deck.drawCards(3);
   }
 
   function executeEnemyIntent(enemy) {
     const state = window.GameEngine.getState();
     const intent = enemy.intents[enemy.intentIndex % enemy.intents.length];
     const rawDmg = enemy.damage;
-    const match = intent.match(/^(w+)((d+))$/);
+    const match = intent.match(/^(\w+)\((\d+)\)$/);
     const baseIntent = match ? match[1] : intent;
     const val = match ? parseInt(match[2]) : 0;
 
     if (baseIntent === 'attack' || baseIntent === 'lifestealAttack') {
       const dmg = calcEnemyDamage(enemy);
-      dealDamageToPlayer(dmg);
+      dealDamageToPlayer(dmg, enemy);
       if (baseIntent === 'lifestealAttack') {
         const heal = Math.floor(dmg * (val / 100) || dmg * 0.5);
         enemy.hp = Math.min(enemy.maxHp, enemy.hp + heal);
@@ -122,13 +207,14 @@ window.Combat = (() => {
     } else if (baseIntent === 'defend') {
       enemy._shield = (enemy._shield || 0) + val;
     } else if (baseIntent === 'strengthen' || baseIntent === 'strengthenAll') {
+      const amount = val || 2;
       if (baseIntent === 'strengthenAll') {
         const enemies = window.Combat.getEnemies();
         for (const e of enemies) {
-          if (e.hp > 0) e._strengthBonus = (e._strengthBonus || 0) + val;
+          if (e.hp > 0) e._strengthBonus = (e._strengthBonus || 0) + amount;
         }
       } else {
-        enemy._strengthBonus = (enemy._strengthBonus || 0) + val;
+        enemy._strengthBonus = (enemy._strengthBonus || 0) + amount;
       }
     } else if (baseIntent === 'applyWeak') {
       if (!state.effects) state.effects = {};
@@ -146,7 +232,7 @@ window.Combat = (() => {
       state.hp = Math.max(0, state.hp - val); // simplified: direct damage as poison
     } else if (baseIntent === 'aoe') {
       const dmg = calcEnemyDamage(enemy);
-      dealDamageToPlayer(Math.floor(dmg * 0.7)); // AOE does 70% of normal
+      dealDamageToPlayer(Math.floor(dmg * 0.7), enemy); // AOE does 70% of normal
     } else if (baseIntent === 'heal') {
       enemy.hp = Math.min(enemy.maxHp, enemy.hp + val);
     } else if (baseIntent === 'summon') {
@@ -159,7 +245,7 @@ window.Combat = (() => {
     // 'ultimate' uses the accumulated charge bonus
     if (baseIntent === 'ultimate') {
       const charge = enemy._chargeBonus || 30;
-      dealDamageToPlayer(calcEnemyDamage(enemy) + charge);
+      dealDamageToPlayer(calcEnemyDamage(enemy) + charge, enemy);
       enemy._chargeBonus = 0;
     }
     enemy.intentIndex++;
@@ -173,7 +259,7 @@ window.Combat = (() => {
   }
 
   // === 伤害与护甲 ===
-  function dealDamageToPlayer(dmg) {
+  function dealDamageToPlayer(dmg, attacker) {
     const state = window.GameEngine.getState();
     let actualDmg = dmg;
     // 易伤
@@ -187,6 +273,13 @@ window.Combat = (() => {
       actualDmg -= absorbed;
     }
     state.hp = Math.max(0, state.hp - actualDmg);
+    if (actualDmg > 0 && state.combatBuffs && state.combatBuffs.strengthOnHit) {
+      state.strength += state.combatBuffs.strengthOnHit;
+    }
+    if (actualDmg > 0 && attacker && state.combatBuffs && state.combatBuffs.thorns) {
+      dealDamageToEnemy(attacker, state.combatBuffs.thorns, { ignoreVulnerable: true });
+    }
+    if (actualDmg > 0) window.Relic.triggerHook('onDamageTaken', {damage:actualDmg,attacker});
     window.GameEngine.emit('playerDamaged', { damage: actualDmg });
     if (state.hp <= 0) {
       if (state._revivePercent && state._revivePercent > 0) {
@@ -209,21 +302,44 @@ window.Combat = (() => {
   }
 
   function calcEnemyDamage(enemy) {
-    let dmg = enemy.damage || 0;
+    let dmg = (enemy.damage || 0) + (enemy._strengthBonus || 0) - (enemy._damageReduction || 0);
     if (enemy.effects && enemy.effects.weak > 0) {
       dmg = Math.floor(dmg * 0.5);
     }
-    return dmg;
+    return Math.max(0, dmg);
   }
 
 
   function calcDamageToEnemy(rawDmg, enemy) {
+    let damage = rawDmg;
+    if (enemy.effects && enemy.effects.vulnerable > 0) damage = Math.floor(damage * 1.5);
     if (enemy._shield && enemy._shield > 0) {
-      const absorbed = Math.min(enemy._shield, rawDmg);
+      const absorbed = Math.min(enemy._shield, damage);
       enemy._shield -= absorbed;
-      return rawDmg - absorbed;
+      return damage - absorbed;
     }
-    return rawDmg;
+    return damage;
+  }
+
+  function dealDamageToEnemy(target, rawDmg, options) {
+    if (!target || target.hp <= 0) return 0;
+    const damage = options && options.ignoreVulnerable
+      ? rawDmg
+      : calcDamageToEnemy(rawDmg, target);
+    target.hp = Math.max(0, target.hp - damage);
+    window.GameEngine.emit('enemyDamaged', { enemy: target, damage });
+    const state = window.GameEngine.getState();
+    const firstHit = !state._hasDealtDamage;
+    if (damage > 0) {
+      state._hasDealtDamage = true;
+      window.Relic.triggerHook('onDamageDealt', {damage,target,targetHp:target.maxHp,firstHit});
+    }
+    if (target.hp <= 0 && !target._defeatEmitted) {
+      target._defeatEmitted = true;
+      window.GameEngine.emit('enemyDefeated', { enemy: target });
+      window.Relic.triggerHook('onEnemyKilled', {enemy:target});
+    }
+    return damage;
   }
 
   function gainArmor(val) {
@@ -248,15 +364,14 @@ window.Combat = (() => {
 
   function tickDot(target) {
     if (target.poison > 0) {
-      target.hp = Math.max(0, target.hp - target.poison);
+      const buffs = window.GameEngine.getState().combatBuffs || {};
+      const multiplier = buffs.poisonDamageMultiplier ? buffs.poisonDamageMultiplier.value : 1;
+      dealDamageToEnemy(target, Math.floor(target.poison * multiplier), { ignoreVulnerable: true });
       // poison does NOT decay
     }
-    if (target.burn > 0) {
-      target.hp = Math.max(0, target.hp - target.burn);
+    if (target.hp > 0 && target.burn > 0) {
+      dealDamageToEnemy(target, target.burn, { ignoreVulnerable: true });
       target.burn = Math.max(0, target.burn - 2);
-    }
-    if (target.hp <= 0) {
-      window.GameEngine.emit('enemyDefeated', { enemy: target });
     }
   }
 
@@ -287,17 +402,14 @@ window.Combat = (() => {
     switch (effect.type) {
       case 'damage':
         if (target && target.hp !== undefined) {
-          let dmg = calcDamage(effect.value);
-          dmg = calcDamageToEnemy(dmg, target);
-          target.hp = Math.max(0, target.hp - dmg);
-          window.GameEngine.emit('enemyDamaged', { enemy: target, damage: dmg });
+          dealDamageToEnemy(target, calcDamage(effect.value));
         }
         break;
       case 'aoeDamage':
-        for (const e of _enemies) {
-          if (e.hp <= 0) continue;
-          const aoeDmg = calcDamage(effect.value);
-          e.hp = Math.max(0, e.hp - aoeDmg);
+        for (let hit = 0; hit < (effect.times || 1); hit++) {
+          for (const e of _enemies) {
+            if (e.hp > 0) dealDamageToEnemy(e, calcDamage(effect.value));
+          }
         }
         break;
       case 'armor':
@@ -316,6 +428,7 @@ window.Combat = (() => {
         break;
       case 'weak':
         if (target) applyWeak(target, effect.turns);
+        else for (const e of _enemies) if (e.hp > 0) applyWeak(e, effect.turns);
         break;
       case 'vulnerable':
         // vulnerable on self (player) or enemy
@@ -328,9 +441,11 @@ window.Combat = (() => {
         break;
       case 'stun':
         if (target) applyStun(target);
+        else for (const e of _enemies) if (e.hp > 0) applyStun(e);
         break;
       case 'strength':
         state.strength += effect.value;
+        if (effect.duration === 'thisTurn') state._turnStrength = (state._turnStrength || 0) + effect.value;
         break;
       case 'draw':
         window.Deck.drawCards(effect.count);
@@ -344,12 +459,12 @@ window.Combat = (() => {
       case 'chain':
         if (target && target.hp !== undefined) {
           const chainDmg = calcDamage(effect.value);
-          target.hp = Math.max(0, target.hp - chainDmg);
+          dealDamageToEnemy(target, chainDmg);
           // Bounce to another random enemy
           const others = _enemies.filter(e => e !== target && e.hp > 0);
           if (others.length > 0) {
             const bounce = others[Math.floor(Math.random() * others.length)];
-            bounce.hp = Math.max(0, bounce.hp - calcDamage(effect.value));
+            dealDamageToEnemy(bounce, calcDamage(effect.value));
           }
         }
         break;
@@ -362,40 +477,82 @@ window.Combat = (() => {
       case 'poisonDamage':
         if (target && target.poison) {
           const pd = target.poison * (effect.multiplier || 2);
-          target.hp = Math.max(0, target.hp - pd);
+          dealDamageToEnemy(target, pd, { ignoreVulnerable: true });
         }
         break;
       case 'bonusOnPoison':
         // Bonus damage if target has poison (影袭)
         if (target && target.poison > 0) {
           const bd = calcDamage(effect.value);
-          target.hp = Math.max(0, target.hp - bd);
+          dealDamageToEnemy(target, bd);
         }
         break;
       case 'perPoisonDamage':
         // Damage per poison layer (暗杀)
         if (target && target.poison) {
           const perDmg = calcDamage(target.poison * effect.value);
-          target.hp = Math.max(0, target.hp - perDmg);
+          dealDamageToEnemy(target, perDmg);
         }
         break;
       case 'costReduce':
-        if (!state.buffs) state.buffs = [];
-        state.buffs.push({type:'costReduce',value:effect.value});
+        state.combatBuffs = state.combatBuffs || {};
+        state.combatBuffs.costReduce = (state.combatBuffs.costReduce || 0) + effect.value;
         break;
       case 'regen':
-        if (!state.buffs) state.buffs = [];
-        state.buffs.push({type:'regen',value:effect.value,turns:effect.turns});
+        state.combatBuffs = state.combatBuffs || {};
+        state.combatBuffs.regen = {value:effect.value,turns:effect.turns};
         break;
       case 'duplicate':
         if (state.hand.length > 0) {
-          const copy = JSON.parse(JSON.stringify(state.hand[0]));
-          copy.cost = 0;
-          state.hand.push(copy);
+          const candidates = state.hand.filter(card => card.type !== 'curse');
+          for (let i = 0; i < (effect.count || 1) && candidates.length; i++) {
+            const copy = JSON.parse(JSON.stringify(candidates[candidates.length - 1]));
+            copy.cost = 0;
+            state.hand.push(copy);
+          }
         }
         break;
       case 'revive':
         state._revivePercent = effect.percent;
+        break;
+      case 'loseHpFlat':
+        state.hp = Math.max(0, state.hp - effect.value);
+        if (state.hp <= 0) window.GameEngine.emit('playerDeath', {});
+        break;
+      case 'enemyDmgReduce': {
+        const targets = target ? [target] : _enemies.filter(e => e.hp > 0);
+        for (const enemy of targets) enemy._damageReduction = (enemy._damageReduction || 0) + effect.value;
+        break;
+      }
+      case 'execute':
+        if (target && target.hp > 0 && target.hp / target.maxHp < effect.threshold / 100) {
+          dealDamageToEnemy(target, calcDamage(effect.value));
+        }
+        break;
+      case 'buff':
+        state.combatBuffs = state.combatBuffs || {};
+        state.combatBuffs[effect.buffType] = (state.combatBuffs[effect.buffType] || 0) + effect.value;
+        break;
+      case 'retrieve':
+        for (let i = 0; i < (effect.count || 1) && state.discardPile.length > 0; i++) {
+          const card = state.discardPile.pop();
+          delete card._curseTriggered;
+          state.hand.push(card);
+        }
+        break;
+      case 'thorns':
+        state.combatBuffs = state.combatBuffs || {};
+        state.combatBuffs.thorns = (state.combatBuffs.thorns || 0) + effect.value;
+        break;
+      case 'extraTurn':
+        state.extraTurn = true;
+        break;
+      case 'drawPerEnemy':
+        window.Deck.drawCards((effect.count || 1) * _enemies.filter(e => e.hp > 0).length);
+        break;
+      case 'poisonDamageBuff':
+        state.combatBuffs = state.combatBuffs || {};
+        state.combatBuffs.poisonDamageMultiplier = {value:effect.multiplier || 1,turns:effect.duration || 1};
         break;
       default:
         console.warn('Unknown effect type:', effect.type);
@@ -416,8 +573,18 @@ window.Combat = (() => {
     if (state.energy < cost) return false;
     state.energy -= cost;
     const target = _enemies[targetIndex];
+    if (card.type === 'attack' && state.combatBuffs && state.combatBuffs.firstAttackFree) {
+      delete state.combatBuffs.firstAttackFree;
+    }
+    if (card.type === 'attack' && target && state.combatBuffs && state.combatBuffs.firstAttackBonus) {
+      dealDamageToEnemy(target, state.combatBuffs.firstAttackBonus);
+      delete state.combatBuffs.firstAttackBonus;
+    }
     // 根据卡牌类型执行效果
     if (card.effects) executeEffects(card.effects, target);
+    if (card.type === 'attack' && target && target.hp > 0 && state.combatBuffs && state.combatBuffs.poisonOnAttack) {
+      applyPoison(target, state.combatBuffs.poisonOnAttack);
+    }
     // 处理 casts
     if (card.casts !== undefined && card.casts > 1) {
       card.casts--;

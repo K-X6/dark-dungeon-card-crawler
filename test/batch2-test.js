@@ -9,9 +9,17 @@ function loadDataFiles() {
   }
   return ctx.window;
 }
-function loadEngine() {
+function createLocalStorage() {
+  const data = {};
+  return {
+    getItem(key) { return Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null; },
+    setItem(key, value) { data[key] = String(value); },
+    removeItem(key) { delete data[key]; }
+  };
+}
+function loadEngine(localStorage) {
   const w = loadDataFiles();
-  const ctx = vm.createContext({ window: w });
+  const ctx = vm.createContext({ window: w, localStorage, console });
   vm.runInContext(fs.readFileSync('js/engine/game-engine.js','utf8'), ctx);
   vm.runInContext(fs.readFileSync('js/engine/deck.js','utf8'), ctx);
   return ctx.window;
@@ -21,7 +29,8 @@ let passed = 0, failed = 0;
 function t(cond, msg) { if(cond) passed++; else { failed++; console.log('FAIL: '+msg); } }
 function eq(a,b,m) { t(a===b, m+': '+a+' === '+b); }
 
-const game = loadEngine();
+const localStorage = createLocalStorage();
+const game = loadEngine(localStorage);
 const GE = game.GameEngine;
 const Deck = game.Deck;
 
@@ -50,20 +59,21 @@ GE.off('stateChanged', null);
 GE.setState('hp', 40);
 t(!fired, 'off works');
 
-// Save (Node: localStorage may not exist)
-const hasLS = typeof localStorage !== 'undefined';
-if (hasLS) {
-  GE.init('warrior','mini','easy');
-  t(GE.save(), 'save succeeds');
-  GE.init('mage','short','hard');
-  const ld = GE.load();
-  t(ld && ld.class === 'warrior', 'load restores warrior');
-  localStorage.removeItem('darkdungeon_save');
-  t(GE.load() === null, 'load null when no save');
-} else {
-  console.log('SKIP: save/load tests need browser localStorage');
-  passed += 3; // auto-pass the 3 save/load assertions
-}
+// Save/load with an in-memory localStorage implementation.
+GE.init('warrior','mini','easy');
+t(GE.save(), 'save succeeds');
+GE.init('mage','short','hard');
+const ld = GE.load();
+t(ld && ld.class === 'warrior', 'load restores warrior');
+localStorage.removeItem('darkdungeon_save');
+t(GE.load() === null, 'load null when no save');
+
+// Legacy saves completed a room on entry; migration must reopen it.
+localStorage.setItem('darkdungeon_save', JSON.stringify({currentNode:2,pathTaken:[0,2],map:[{},{},{}]}));
+const migrated = GE.load();
+t(migrated.saveVersion === 2, 'legacy save migrated to v2');
+t(!migrated.pathTaken.includes(2), 'legacy current node reopened');
+localStorage.removeItem('darkdungeon_save');
 
 console.log('--- deck.js ---');
 GE.init('rogue', 'standard', 'normal');
