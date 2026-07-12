@@ -36,6 +36,12 @@
       if (e.poison > 0) html += '<div style="color:#2ecc71">☠ ' + e.poison + '</div>';
       if (e.burn > 0) html += '<div style="color:#e67e22">🔥 ' + e.burn + '</div>';
       html += '<div class="enemy-intent"><span class="intent-icon">' + getIntentIcon(e) + '</span> ' + getIntentText(e) + '</div>';
+      var statusBadges = '';
+      if (e.effects && e.effects.weak > 0) statusBadges += '<span style="background:#8b4513;color:#fff;padding:0 4px;border-radius:4px;font-size:10px;margin:0 1px" title="伤害-50%">💤</span>';
+      if (e.effects && e.effects.stun) statusBadges += '<span style="background:#ff0;color:#000;padding:0 4px;border-radius:4px;font-size:10px;margin:0 1px" title="眩晕">⚡</span>';
+      if (e.poison > 0) statusBadges += '<span style="background:#2ecc71;color:#fff;padding:0 4px;border-radius:4px;font-size:10px;margin:0 1px" title="中毒'+e.poison+'层">☠'+e.poison+'</span>';
+      if (e.burn > 0) statusBadges += '<span style="background:#e67e22;color:#fff;padding:0 4px;border-radius:4px;font-size:10px;margin:0 1px" title="灼烧'+e.burn+'层">🔥'+e.burn+'</span>';
+      if (statusBadges) html += '<div style="margin-top:4px">' + statusBadges + '</div>';
       html += '</div>';
     }
     html += '</div>';
@@ -68,6 +74,26 @@
     document.getElementById('btn-deck-view').addEventListener('click', function() {
       showDeckViewer();
     });
+    // Keyboard shortcuts
+    var oldHandler = document.onkeydown;
+    document.onkeydown = function(e) {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        document.getElementById('btn-end-turn').click();
+        return;
+      }
+      if (e.key === 'Escape') {
+        var dv = document.getElementById('deck-viewer');
+        if (dv) { dv.remove(); return; }
+        var mo = document.getElementById('mulligan-overlay');
+        if (mo) { mo.remove(); return; }
+      }
+      var num = parseInt(e.key);
+      if (num >= 1 && num <= 3) {
+        var cards = document.querySelectorAll('.card:not(.curse):not(.disabled)');
+        if (cards[num-1]) cards[num-1].click();
+      }
+    };
     document.getElementById('btn-end-turn').addEventListener('click', function() {
       var enemies = window.Combat.getEnemies();
       var logLines = [];
