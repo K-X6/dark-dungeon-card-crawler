@@ -92,17 +92,17 @@ window.EventUI = (() => {
     const app = document.getElementById('app');
     app.innerHTML = `
       <div class="overlay">
-        <div class="overlay-content">
-          <h2>商店</h2>
-          <p style="color:var(--text-dim)">以血换物</p>
-          <div class="picker-options">
+        <div class="overlay-content" style="max-width:360px">
+          <h2>💰 商店</h2>
+          <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">以血换物 — 当前 HP: ${state.hp}</p>
+          <div class="picker-options" style="gap:6px">
             <button id="shop-card" ${state.hp < 15 ? "disabled" : ""}>普通卡牌 — 15 HP${state.hp < 15 ? " (HP不足)" : ""}</button>
             <button id="shop-rare" ${state.hp < 30 ? "disabled" : ""}>稀有卡牌 — 30 HP${state.hp < 30 ? " (HP不足)" : ""}</button>
             <button id="shop-potion" ${state.hp < 10 ? "disabled" : ""}>药水 — 10 HP${state.hp < 10 ? " (HP不足)" : ""}</button>
             <button id="shop-relic" ${state.hp < 40 ? "disabled" : ""}>普通遗物 — 40 HP${state.hp < 40 ? " (HP不足)" : ""}</button>
             <button id="shop-rare-relic" ${state.hp < 60 ? "disabled" : ""}>稀有遗物 — 60 HP${state.hp < 60 ? " (HP不足)" : ""}</button>
             <button id="shop-remove" ${state.hp < 25 || window.Deck.getDeckSize() <= 5 ? "disabled" : ""}>移除一张牌 — 25 HP${state.hp < 25 ? " (HP不足)" : window.Deck.getDeckSize() <= 5 ? " (牌组最小5张)" : ""}</button>
-            <button id="shop-leave">离开</button>
+            <button id="shop-leave" style="margin-top:8px">➕ 离开商店</button>
           </div>
         </div>
       </div>
