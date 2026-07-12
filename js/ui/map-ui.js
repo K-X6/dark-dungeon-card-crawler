@@ -169,6 +169,7 @@ window.MapUI = (() => {
       const pool = window.RELICS[rarity];
       const relic = pool[Math.floor(Math.random() * pool.length)];
       state.relics.push(JSON.parse(JSON.stringify(relic)));
+      var t2=document.createElement('div');t2.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:2px solid var(--gold);color:var(--gold);padding:8px 20px;border-radius:8px;z-index:500;font-size:14px;animation:toastIn 2.5s ease forwards';t2.textContent='获得遗物: '+relic.name;document.body.appendChild(t2);setTimeout(function(){t2.remove();},2600);
     } else { // 40% potion
       const potion = window.POTIONS[Math.floor(Math.random() * window.POTIONS.length)];
       if (state.potions.length < 3) state.potions.push(JSON.parse(JSON.stringify(potion)));
