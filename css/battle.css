@@ -284,3 +284,8 @@
   background: var(--gold); color: #000; font-size: 12px; font-weight: bold;
   display: flex; align-items: center; justify-content: center;
 }
+
+.card.playable {
+  border-color: var(--accent-glow);
+  box-shadow: 0 0 8px rgba(192,57,43,0.3);
+}
