@@ -13,7 +13,12 @@ window.Menu = (() => {
       <div class="menu-screen">
         <h1>暗黑地牢</h1>
         <div class="subtitle">卡牌爬塔</div>
-        <div class="menu-options">
+        var bestScore = '0'; try { bestScore = localStorage.getItem('darkdungeon_bestscore') || '0'; } catch(e) {};
+    app.innerHTML = '<div class="menu-screen">' +
+      '<h1>暗黑地牢</h1>' +
+      '<div class="subtitle">卡牌爬塔</div>' +
+      (bestScore !== '0' ? '<div style="color:var(--gold);font-size:14px;margin-bottom:16px">🏆 最高分: ' + bestScore + '</div>' : '') +
+      '<div class="menu-options">'
           <button id="btn-new" class="btn-primary">新游戏</button>
           <button id="btn-continue" ${hasSave ? '' : 'disabled'}>继续游戏</button>
         </div>

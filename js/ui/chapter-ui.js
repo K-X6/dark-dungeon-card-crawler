@@ -97,7 +97,12 @@ window.ResultUI = (() => {
       </div>
     `;
     document.getElementById('btn-menu').addEventListener('click', () => {
-      localStorage.removeItem('darkdungeon_save');
+      // Save best score
+    try {
+      var best = parseInt(localStorage.getItem('darkdungeon_bestscore') || '0');
+      if (totalScore > best) localStorage.setItem('darkdungeon_bestscore', '' + totalScore);
+    } catch(e) {}
+    localStorage.removeItem('darkdungeon_save');
       document.body.classList.remove('death-vignette');
       window.Menu.show();
     });
