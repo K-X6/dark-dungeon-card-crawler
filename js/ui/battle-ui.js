@@ -300,7 +300,7 @@
     var overlay = document.createElement('div');
     overlay.id = 'mulligan-overlay';
     overlay.innerHTML = '<h2 style="color:var(--accent)">起始手牌</h2><div style="display:flex;gap:10px">' +
-      state.hand.map(function(c){return '<div class="card"><div class="card-name">'+c.name+'</div><div class="card-cost">'+c.cost+'</div></div>';}).join('') +
+      state.hand.map(function(c){return '<div class="card" title="'+describeCard(c)+'"><div class="card-name">'+c.name+'</div><div class="card-cost">'+c.cost+'</div><div class="card-effects" style="font-size:9px">'+describeEffects(c.effects)+'</div></div>';}).join('') +
       '</div><button id="btn-keep">开始战斗</button><button id="btn-mulligan">换牌</button>';
     document.body.appendChild(overlay);
     document.getElementById('btn-keep').addEventListener('click', function(){overlay.remove();});
