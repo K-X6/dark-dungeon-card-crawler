@@ -126,7 +126,7 @@ window.EventUI = (() => {
       }
       window.MapUI.show();
     });
-    document.getElementById('shop-leave').addEventListener('click', () => window.MapUI.show());
+    document.getElementById('shop-leave').addEventListener('click', function(){ if (confirm('离开商店？')) window.MapUI.show(); });
   }
 
   async function shopBuy(cost, type, rarity) {
