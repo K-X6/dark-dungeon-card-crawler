@@ -75,7 +75,8 @@
     html += '<div id="enemy-action-log" style="text-align:center;color:var(--text-dim);font-size:14px;min-height:20px;margin:4px 0"></div>';
   html += '<button id="btn-deck-view" style="font-size:13px;padding:4px 10px">查看牌组</button>';
     html += '<button id="btn-end-turn"' + (phase !== 'PLAYER_TURN' ? ' disabled' : '') + '>结束回合</button>';
-    html += '<button id="btn-escape" style="font-size:13px;padding:4px 10px;color:var(--text-dim);border-color:var(--text-dim)" title="消耗20%HP逃跑">逃跑</button>';
+    var escapeCost = Math.ceil(state.maxHp * 0.2);
+    html += '<button id="btn-escape" style="font-size:13px;padding:4px 10px;color:var(--text-dim);border-color:var(--text-dim)" title="消耗20%HP逃跑">逃跑(-'+escapeCost+'HP)</button>';
     html += '</div></div>';
     app.innerHTML = html;
 
