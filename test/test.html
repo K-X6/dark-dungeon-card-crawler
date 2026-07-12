@@ -127,7 +127,7 @@ testPotions();
 function testEvents() {
   assert(typeof EVENTS !== 'undefined', 'EVENTS exists');
   assertArray(EVENTS, 'EVENTS is array');
-  assertEquals(EVENTS.length, 12, '12 events');
+  assertEquals(EVENTS.length, 15, '15 events');
   
   const e = EVENTS[0];
   assertType(e.name, 'string', 'event.name is string');

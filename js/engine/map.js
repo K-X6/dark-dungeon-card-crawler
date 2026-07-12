@@ -32,20 +32,22 @@ window.Map = (() => {
         bossesPlaced++;
       } else {
         // Non-boss: pick random non-boss type
-        const type = NODE_TYPES[Math.floor(Math.random() * NODE_TYPES.length)];
+        const type = f === 1 ? 'battle' : NODE_TYPES[Math.floor(Math.random() * NODE_TYPES.length)];
         nodes.push({ floor: f, type, chapter });
       }
     }
 
-    // Build paths: each floor has 2-3 connections to next floor
+    // Build a forward-only DAG. A node can offer several upcoming rooms, but
+    // paths never jump over a boss so chapter progression remains mandatory.
     for (let i = 0; i < nodes.length - 1; i++) {
-      const branchCount = 2 + Math.floor(Math.random() * 2); // 2-3
-      nodes[i].branches = [];
-      const nextFloor = nodes[i + 1];
-      for (let b = 0; b < branchCount; b++) {
-        nodes[i].branches.push(i + 1); // All connect to next floor
-      }
+      const nextBossIndex = nodes.findIndex((node, idx) => idx > i && node.type === 'boss');
+      const lastReachable = nextBossIndex >= 0 ? nextBossIndex : nodes.length - 1;
+      const candidates = [];
+      for (let idx = i + 1; idx <= Math.min(i + 3, lastReachable); idx++) candidates.push(idx);
+      const branchCount = Math.min(candidates.length, 2 + Math.floor(Math.random() * 2));
+      nodes[i].branches = candidates.slice(0, Math.max(1, branchCount));
     }
+    nodes[nodes.length - 1].branches = [];
 
     return { chapter, nodes };
   }
@@ -74,6 +76,15 @@ window.Map = (() => {
     window.GameEngine.save();
   }
 
+  function completeCurrentNode() {
+    const state = window.GameEngine.getState();
+    if (!state || !state.map || !state.map[state.currentNode]) return false;
+    state.pathTaken = state.pathTaken || [];
+    if (!state.pathTaken.includes(state.currentNode)) state.pathTaken.push(state.currentNode);
+    window.GameEngine.save();
+    return true;
+  }
+
   function isChapterEnd(node) {
     if (!node) return false;
     const state = window.GameEngine.getState();
@@ -81,5 +92,5 @@ window.Map = (() => {
     return node.type === 'boss' && node.floor === mapForChapter[mapForChapter.length - 1]?.floor;
   }
 
-  return { generateFullMap, getAvailablePaths, advanceNode, isChapterEnd };
+  return { generateFullMap, getAvailablePaths, advanceNode, completeCurrentNode, isChapterEnd };
 })();

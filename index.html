@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/battle.css">
   <link rel="stylesheet" href="css/map.css">
-  <style>@keyframes fireworkBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}}</style>
+<style>@keyframes fireworkBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}}</style>
 </head>
 <body data-chapter="1">
   <div id="app"></div>
@@ -34,93 +34,8 @@
   <script src="js/ui/event-ui.js"></script>
   <script src="js/ui/chapter-ui.js"></script>
 
-  <script>
-    // 事件路由
-    window.GameEngine.on('gameStart', (data) => {
-      const state = window.GameEngine.getState();
-      document.body.dataset.chapter = state.chapter;
-      // 继续游戏：直接恢复保存的地图；新游戏：生成地图
-      if (!state.map || state.map.length === 0) {
-        const mapData = window.Map.generateFullMap(state.mode);
-        state.map = mapData[0].nodes;
-        state.currentNode = 0;
-      }
-      window.MapUI.show();
-    });
-
-    window.GameEngine.on('floorEnter', function(){
-      var t=document.createElement('div');t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);color:var(--text-dim);font-size:12px;z-index:400;animation:toastIn 1.5s ease forwards';t.textContent='💾 已保存';document.body.appendChild(t);setTimeout(function(){t.remove();},1600);
-    });
-
-    window.GameEngine.on('playerDeath', () => {
-      window.ResultUI.showDeath();
-    });
-
-    window.GameEngine.on('enemyDefeated', () => {
-      const state = window.GameEngine.getState();
-      state.enemiesDefeated++;
-    });
-
-    // 战斗胜利处理
-    window.GameEngine.on('battleVictory', () => { handleBattleVictory(); });
-    
-    // 战斗胜利检测
-
-    async function handleBattleVictory() {
-      const state = window.GameEngine.getState();
-      const node = state.map[state.currentNode];
-      
-      window.Relic.triggerHook('onPostBattle', {});
-
-      if (node.type === 'boss') {
-        state.bossesDefeated++;
-        state.defeatedBossIds.push(node.bossId);
-        
-        if (window.Map.isChapterEnd(node)) {
-          const totalChapters = state.mode === 'mini' ? 1 : state.mode === 'short' ? 2 : 3;
-          if (state.chapter >= totalChapters) {
-            // 通关
-            window.ResultUI.showVictory();
-            return;
-          }
-          window.ChapterUI.showCleared(state.chapter);
-          return;
-        }
-      }
-
-      // 普通/精英战斗：选牌
-      const pool = window.CARDS.filter(c => c.rarity === 'common' && c.type !== 'curse' && (c.class === state.class));
-      const options = [];
-      for (let i = 0; i < 3 && pool.length > 0; i++) {
-        options.push(pool[Math.floor(Math.random() * pool.length)]);
-      }
-      if (options.length === 0) { window.MapUI.show(); return; }
-      const idx = await window.showPicker(options.map(c => ({label: `${c.name} (${c.cost}费)`})), {title: '战后选牌', allowSkip: true});
-      if (idx >= 0) window.Deck.addCardToDeck(options[idx]);
-
-      // 药水掉落 25%
-      var potionDrop = null;
-      if (Math.random() < 0.35) {
-        const potion = window.getRandomPotion('common');
-        if (potion && state.potions.length < 3) { state.potions.push(JSON.parse(JSON.stringify(potion))); potionDrop = potion; }
-      }
-
-        window.MapUI.show();
-    }
-
-    function showRewardToast(text) {
-      var t = document.createElement('div');
-      t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:2px solid var(--gold);color:var(--gold);padding:10px 24px;border-radius:8px;z-index:500;font-size:16px;animation:toastIn 2.5s ease forwards';
-      t.textContent = text;
-      document.body.appendChild(t);
-      setTimeout(function(){t.remove();}, 2600);
-    }
-
-    // 启动菜单
-    window.Menu.show();
-  </script>
+  <script src="js/main.js"></script>
 </body>
 </html>
-
 
 

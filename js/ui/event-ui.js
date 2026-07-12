@@ -3,7 +3,7 @@ window.EventUI = (() => {
   async function showEvent() {
     const state = window.GameEngine.getState();
     const available = window.EVENTS.filter(e => !state.eventsEncountered.includes(e.name));
-    if (available.length === 0) { window.MapUI.show(); return; }
+    if (available.length === 0) { finishNode(); return; }
     const event = available[Math.floor(Math.random() * available.length)];
     state.eventsEncountered.push(event.name);
 
@@ -23,15 +23,16 @@ window.EventUI = (() => {
     `;
 
     document.querySelectorAll('[data-opt]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const effects = event.options[parseInt(btn.dataset.opt)].effects;
-        executeEventEffects(effects);
-        window.MapUI.show();
+        document.querySelectorAll('[data-opt]').forEach(option => option.disabled = true);
+        await executeEventEffects(effects);
+        finishNode();
       });
     });
   }
 
-  function executeEventEffects(effects) {
+  async function executeEventEffects(effects) {
     const state = window.GameEngine.getState();
     for (const eff of effects) {
       switch (eff.type) {
@@ -43,11 +44,12 @@ window.EventUI = (() => {
           if (pool?.length) state.relics.push(JSON.parse(JSON.stringify(pool[Math.floor(Math.random() * pool.length)])));
           break;
         }
-        case 'gainRelicChoice': { /* handled by showPicker in game flow */ break; }
         case 'gainCard': {
           const rarity = eff.rarity || 'common';
-          const pool = window.CARDS.filter(c => c.rarity === rarity && c.type !== 'curse');
-          if (pool.length) window.Deck.addCardToDeck(pool[Math.floor(Math.random() * pool.length)]);
+          const pool = window.CARDS.filter(c => c.rarity === rarity && c.type !== 'curse' && c.class === state.class);
+          for (let i = 0; i < (eff.count || 1) && pool.length; i++) {
+            window.Deck.addCardToDeck(pool[Math.floor(Math.random() * pool.length)]);
+          }
           break;
         }
         case 'gainPotion': {
@@ -57,14 +59,47 @@ window.EventUI = (() => {
           break;
         }
         case 'gainCurse': {
+          const curses = window.CARDS.filter(c => c.type === 'curse');
           for (let i = 0; i < (eff.count || 1); i++) {
-            const curse = window.CARDS.find(c => c.type === 'curse');
-            if (curse) state.hand.push(JSON.parse(JSON.stringify(curse)));
+            const curse = curses[Math.floor(Math.random() * curses.length)];
+            if (curse) window.Deck.addCardToDeck(curse);
           }
           break;
         }
-        case 'upgradeCard': { /* handled by rest UI */ break; }
-        case 'removeCard': { /* handled by rest UI */ break; }
+        case 'gainCardChoice': {
+          const count = eff.count || 3;
+          let pool = window.CARDS.filter(c => c.type !== 'curse' && c.class === state.class);
+          if (eff.rarity && eff.rarity !== 'random') pool = pool.filter(c => c.rarity === eff.rarity);
+          const options = pickRandomOptions(pool, count);
+          if (options.length) {
+            const idx = await window.showPicker(options.map(c => ({label: `${c.name} (${c.rarity})`})), {title:'选择一张牌',allowSkip:true});
+            if (idx >= 0) window.Deck.addCardToDeck(options[idx]);
+          }
+          break;
+        }
+        case 'gainRelicChoice': {
+          const rarity = eff.rarity === 'random' ? (Math.random() < 0.7 ? 'common' : 'rare') : (eff.rarity || 'common');
+          const options = pickRandomOptions(window.RELICS[rarity] || [], eff.count || 3);
+          if (options.length) {
+            const idx = await window.showPicker(options.map(r => ({label:r.name,description:r.description})), {title:'选择一个遗物',allowSkip:true});
+            if (idx >= 0) state.relics.push(JSON.parse(JSON.stringify(options[idx])));
+          }
+          break;
+        }
+        case 'upgradeCard': {
+          const upgradable = state.deck.filter(c => !c._upgraded && c.upgraded && (c.upgraded.effects || c.upgraded.upgradedCost !== undefined));
+          if (upgradable.length) {
+            const idx = await window.showPicker(upgradable.map(c => ({label:c.name,description:'升级此卡牌'})), {title:'选择要升级的牌',allowSkip:true});
+            if (idx >= 0) upgradeCard(upgradable[idx]);
+          }
+          break;
+        }
+        case 'removeCard': {
+          if (window.Deck.getDeckSize() <= 5) break;
+          const idx = await window.showPicker(state.deck.map(c => ({label:c.name,description:`${c.cost}费 · ${c.rarity}`})), {title:'选择要移除的牌',allowSkip:true});
+          if (idx >= 0) state.deck.splice(idx, 1);
+          break;
+        }
         case 'losePotion': {
           if (state.potions.length > 0) state.potions.splice(0, eff.count || 1);
           break;
@@ -77,12 +112,44 @@ window.EventUI = (() => {
           break;
         }
         case 'gamble': {
-          if (Math.random() * 100 < eff.chance) executeEventEffects([eff.win]);
-          else if (eff.lose) executeEventEffects([eff.lose]);
+          if (Math.random() * 100 < eff.chance) await executeEventEffects([eff.win]);
+          else if (eff.lose) await executeEventEffects([eff.lose]);
+          break;
+        }
+        case 'addBuff': {
+          state.buffs = state.buffs || [];
+          state.buffs.push({type:'battleStart',buffType:eff.buffType,value:eff.value,turns:eff.turns || 1});
+          break;
+        }
+        case 'loseRandomCard': {
+          if (state.deck.length > 5) state.deck.splice(Math.floor(Math.random() * state.deck.length), 1);
+          break;
+        }
+        case 'fightMirror': {
+          // Resolve the abstract mirror duel immediately so the event does not
+          // collide with the normal map battle reward handler.
+          const winChance = Math.max(35, Math.min(80, 65 + Math.floor((state.hp / state.maxHp - 0.5) * 30)));
+          if (Math.random() * 100 < winChance) await executeEventEffects([eff.win]);
+          else if (eff.lose) await executeEventEffects([eff.lose]);
           break;
         }
       }
     }
+  }
+
+  function pickRandomOptions(pool, count) {
+    const copy = pool.slice();
+    const options = [];
+    while (copy.length && options.length < count) {
+      options.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+    }
+    return options;
+  }
+
+  function upgradeCard(card) {
+    card._upgraded = true;
+    if (card.upgraded.effects) card.effects = JSON.parse(JSON.stringify(card.upgraded.effects));
+    if (card.upgraded.upgradedCost !== undefined) card.cost = card.upgraded.upgradedCost;
   }
 
   async function showShop() {
@@ -124,9 +191,9 @@ window.EventUI = (() => {
         state.deck = allCards;
         state.discardPile = [];
       }
-      window.MapUI.show();
+      finishNode();
     });
-    document.getElementById('shop-leave').addEventListener('click', function(){ if (confirm('离开商店？')) window.MapUI.show(); });
+    document.getElementById('shop-leave').addEventListener('click', function(){ if (confirm('离开商店？')) finishNode(); });
   }
 
   async function shopBuy(cost, type, rarity) {
@@ -149,13 +216,13 @@ window.EventUI = (() => {
       const p = window.getRandomPotion('common');
       if (p) state.potions.push(JSON.parse(JSON.stringify(p)));
     }
-    window.MapUI.show();
+    finishNode();
   }
 
   async function showRest() {
     const state = window.GameEngine.getState();
     const allCards = [...state.deck, ...state.hand, ...state.discardPile];
-    const upgradable = allCards.filter(c => !c._upgraded && c.upgraded && c.upgraded.effects);
+    const upgradable = allCards.filter(c => !c._upgraded && c.upgraded && (c.upgraded.effects || c.upgraded.upgradedCost !== undefined));
 
     const app = document.getElementById('app');
     app.innerHTML = `
@@ -174,7 +241,7 @@ window.EventUI = (() => {
     document.getElementById('rest-heal').addEventListener('click', () => {
       state.hp = Math.min(state.maxHp, state.hp + Math.ceil(state.maxHp * 0.3));
       window.Relic.triggerHook('onEnterRest', {});
-      window.MapUI.show();
+      finishNode();
     });
 
     document.getElementById('rest-upgrade').addEventListener('click', async () => {
@@ -183,10 +250,10 @@ window.EventUI = (() => {
       if (idx >= 0) {
         const card = upgradable[idx];
         card._upgraded = true;
-        card.effects = JSON.parse(JSON.stringify(card.upgraded.effects));
+        if (card.upgraded.effects) card.effects = JSON.parse(JSON.stringify(card.upgraded.effects));
         if (card.upgraded.upgradedCost !== undefined) card.cost = card.upgraded.upgradedCost;
       }
-      window.MapUI.show();
+      finishNode();
     });
   }
 
@@ -197,6 +264,11 @@ window.EventUI = (() => {
     state.relics.push(JSON.parse(JSON.stringify(relic)));
     const curse = window.CARDS.filter(c => c.type === 'curse')[Math.floor(Math.random() * 5)];
     state.hand.push(JSON.parse(JSON.stringify(curse)));
+    finishNode();
+  }
+
+  function finishNode() {
+    window.Map.completeCurrentNode();
     window.MapUI.show();
   }
 

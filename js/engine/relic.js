@@ -21,11 +21,21 @@ window.Relic = (() => {
     switch (hook) {
       case 'onBattleStart':
         if (eff.armor) state.armor += eff.armor;
-        if (eff.maxHp) state.maxHp += eff.maxHp;
+        if (eff.maxHp && !relic._maxHpApplied) {
+          state.maxHp += eff.maxHp;
+          state.hp = Math.min(state.maxHp, state.hp + eff.maxHp);
+          relic._maxHpApplied = true;
+        }
         if (eff.firstTurnEnergy) state.energy += eff.firstTurnEnergy;
         if (eff.potionSlots) { /* handled by UI */ }
-        if (eff.randomPoison) { /* combat will handle */ }
-        if (eff.firstAttackBonus) { /* combat tracks first attack */ }
+        if (eff.randomPoison && window.Combat) {
+          const living = window.Combat.getEnemies().filter(enemy => enemy.hp > 0);
+          if (living.length) window.Combat.applyPoison(living[Math.floor(Math.random() * living.length)], eff.randomPoison);
+        }
+        if (eff.firstAttackBonus) {
+          state.combatBuffs = state.combatBuffs || {};
+          state.combatBuffs.firstAttackBonus = (state.combatBuffs.firstAttackBonus || 0) + eff.firstAttackBonus;
+        }
         if (eff.extraDraw) window.Deck.drawCards(eff.extraDraw);
         if (eff.strengthPerCurse) {
           const curseCount = [...state.deck, ...state.hand, ...state.discardPile].filter(c => c.type === 'curse').length;
@@ -34,11 +44,18 @@ window.Relic = (() => {
         if (eff.healToHalfIfLow && state.hp < state.maxHp * 0.5) {
           state.hp = Math.floor(state.maxHp * 0.5);
         }
-        if (eff.bonusEnergy) state.maxEnergy += eff.bonusEnergy;
+        if (eff.bonusEnergy && !relic._energyApplied) {
+          state.maxEnergy += eff.bonusEnergy;
+          state.energy += eff.bonusEnergy;
+          relic._energyApplied = true;
+        }
         if (eff.lowHpStrength && state.hp < state.maxHp * 0.3) state.strength += eff.lowHpStrength;
         if (eff.seeIntentTurns) { /* handled by UI */ }
         if (eff.costReduceAll) { /* handled by deck.getCardCost */ }
-        if (eff.firstAttackFree) { /* handled by combat */ }
+        if (eff.firstAttackFree) {
+          state.combatBuffs = state.combatBuffs || {};
+          state.combatBuffs.firstAttackFree = true;
+        }
         break;
       case 'onTurnStart':
         // 力量图腾

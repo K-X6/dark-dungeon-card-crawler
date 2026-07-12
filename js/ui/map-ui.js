@@ -2,9 +2,14 @@
 window.MapUI = (() => {
   function show() { document.body.classList.remove('boss-fight');
     const state = window.GameEngine.getState();
+    window.GameEngine.save();
     const app = document.getElementById('app');
     const map = state.map;
     const currentNode = state.currentNode;
+    const pathTaken = state.pathTaken || [];
+    const availableIndices = pathTaken.length === 0
+      ? [currentNode]
+      : ((map[currentNode] && map[currentNode].branches) || []).filter(i => !pathTaken.includes(i));
 
     const progressPct = Math.floor(((currentNode || 0) / Math.max(1, map.length - 1)) * 100);
 
@@ -23,12 +28,11 @@ window.MapUI = (() => {
         </div>
         <div class="map-nodes">
           ${map.map((node, i) => {
-            const nodeIcon = i < currentNode ? '✓' : (nodeIcons[node.type] || '?');
+            const nodeIcon = pathTaken.includes(i) ? '✓' : (nodeIcons[node.type] || '?');
             let nodeClass = 'map-node';
             if (node.type === 'boss') nodeClass += ' node-boss';
-            if (i === currentNode) nodeClass += ' current';
-            else if (i < currentNode) nodeClass += ' visited';
-            else if (i === currentNode + 1) nodeClass += ' available';
+            if (pathTaken.includes(i)) nodeClass += i === currentNode ? ' current visited' : ' visited';
+            else if (availableIndices.includes(i)) nodeClass += ' available';
             else nodeClass += ' locked';
             return `
               <div class="${nodeClass}" data-index="${i}">
@@ -45,7 +49,7 @@ window.MapUI = (() => {
 
     document.getElementById('progress-fill').style.width = progressPct + '%';
     document.getElementById('btn-menu-return').addEventListener('click', function() { if (confirm('返回主菜单？进度已保存。')) { window.GameEngine.save(); window.Menu.show(); } });
-    document.querySelectorAll('.map-node.available, .map-node.current').forEach(n => {
+    document.querySelectorAll('.map-node.available').forEach(n => {
       n.addEventListener('click', async () => {
         const idx = parseInt(n.dataset.index);
         window.Map.advanceNode(idx);
@@ -73,6 +77,7 @@ window.MapUI = (() => {
         break;
       case 'chest':
         await handleChest();
+        window.Map.completeCurrentNode();
         show();
         break;
       case 'event':

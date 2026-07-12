@@ -6,29 +6,30 @@ window.Menu = (() => {
   function show() {
     const app = document.getElementById('app');
     const hasSave = !!window.GameEngine.load();
-    // If save was loaded, reset (we just checked existence)
-    if (hasSave) window.GameEngine.load();
+    let bestScore = '0';
+    let deaths = 0;
+    let streak = 0;
+    try {
+      bestScore = localStorage.getItem('darkdungeon_bestscore') || '0';
+      deaths = parseInt(localStorage.getItem('darkdungeon_deaths') || '0', 10);
+      streak = parseInt(localStorage.getItem('darkdungeon_streak') || '0', 10);
+    } catch (e) {}
 
     app.innerHTML = `
       <div class="menu-screen">
         <h1>暗黑地牢</h1>
         <div class="subtitle">卡牌爬塔</div>
-        var bestScore = '0'; try { bestScore = localStorage.getItem('darkdungeon_bestscore') || '0'; } catch(e) {}
-      var deaths = 0; try { deaths = parseInt(localStorage.getItem('darkdungeon_deaths') || '0'); } catch(e) {}
-      var streak = 0; try { streak = parseInt(localStorage.getItem('darkdungeon_streak') || '0'); } catch(e) {};
-    app.innerHTML = '<div class="menu-screen">' +
-      '<h1>暗黑地牢</h1>' +
-      '<div class="subtitle">卡牌爬塔</div>' +
-      (bestScore !== '0' ? '<div style="color:var(--gold);font-size:14px;margin-bottom:4px">🏆 最高分: ' + bestScore + '</div>' : '') +
-      (deaths > 0 ? '<div style="color:var(--text-dim);font-size:13px;margin-bottom:2px">💀 死亡: ' + deaths + '</div>' : '') +
-      (streak > 0 ? '<div style="color:var(--danger);font-size:14px;margin-bottom:12px">🔥 连胜: ' + streak + '</div>' : '') +
-      '<div style="position:absolute;bottom:20px;right:20px"><button id="btn-settings" style="font-size:20px;padding:6px 10px;background:transparent;border:none;color:var(--text-dim)" title="设置">⚙</button></div>' +
-      '<div class="menu-options">'
+        ${bestScore !== '0' ? `<div style="color:var(--gold);font-size:14px;margin-bottom:4px">🏆 最高分: ${bestScore}</div>` : ''}
+        ${deaths > 0 ? `<div style="color:var(--text-dim);font-size:13px;margin-bottom:2px">💀 死亡: ${deaths}</div>` : ''}
+        ${streak > 0 ? `<div style="color:var(--danger);font-size:14px;margin-bottom:12px">🔥 连胜: ${streak}</div>` : ''}
+        <div class="menu-options">
           <button id="btn-new" class="btn-primary">新游戏</button>
           <button id="btn-continue" ${hasSave ? '' : 'disabled'}>继续游戏</button>
         </div>
-      </div>
-    `;
+        <div style="position:absolute;bottom:20px;right:20px">
+          <button id="btn-settings" style="font-size:20px;padding:6px 10px;background:transparent;border:none;color:var(--text-dim)" title="设置">⚙</button>
+        </div>
+      </div>`;
 
     document.getElementById('btn-new').addEventListener('click', function(){
       if (hasSave && !confirm('当前有未完成的对局，开始新游戏将丢失进度。确定？')) return;
@@ -36,8 +37,8 @@ window.Menu = (() => {
     });
     if (hasSave) {
       document.getElementById('btn-continue').addEventListener('click', continueGame);
-    document.getElementById('btn-settings').addEventListener('click', showSettings);
     }
+    document.getElementById('btn-settings').addEventListener('click', showSettings);
   }
 
   function showModeSelect() {
@@ -87,12 +88,12 @@ window.Menu = (() => {
           <div class="class-card" id="cls-warrior">
             <h3>战士</h3>
             <p>铁壁与利刃，正面碾碎一切敌人。</p>
-            <div class="stats">HP 80 | 能量 3</div>
+            <div class="stats">HP 85 | 能量 3</div>
           </div>
           <div class="class-card" id="cls-mage">
             <h3>法师</h3>
             <p>掌控元素之力，用智慧撕裂深渊。</p>
-            <div class="stats">HP 60 | 能量 4</div>
+            <div class="stats">HP 65 | 能量 4</div>
           </div>
           <div class="class-card" id="cls-rogue">
             <h3>盗贼</h3>
@@ -111,8 +112,37 @@ window.Menu = (() => {
 
   function startGame(cls) {
     window.GameEngine.init(cls, selectedMode, selectedDifficulty);
-    document.getElementById('app').innerHTML = '<div class="menu-screen"><h1>游戏开始...</h1></div>';
-    window.GameEngine.emit('gameStart', { class: cls, mode: selectedMode, difficulty: selectedDifficulty });
+  }
+
+  function showSettings() {
+    const app = document.getElementById('app');
+    let unlocks = {};
+    try { unlocks = JSON.parse(localStorage.getItem('darkdungeon_unlocks') || '{}'); } catch (e) {}
+    const classNames = { warrior: '战士', mage: '法师', rogue: '盗贼' };
+    const unlocked = Object.keys(classNames).filter(cls => unlocks[cls]).map(cls => classNames[cls]);
+
+    app.innerHTML = `
+      <div class="menu-screen">
+        <h1>设置</h1>
+        <div style="background:var(--surface);border:1px solid var(--card-border);padding:18px;margin:16px 0;max-width:360px">
+          <div style="color:var(--text-dim);font-size:13px;margin-bottom:8px">已完成职业</div>
+          <div>${unlocked.length ? unlocked.join('、') : '暂无'}</div>
+        </div>
+        <div class="menu-options">
+          <button id="btn-settings-back">返回</button>
+          <button id="btn-reset-progress" style="color:var(--danger)">重置全部进度</button>
+        </div>
+      </div>`;
+
+    document.getElementById('btn-settings-back').addEventListener('click', show);
+    document.getElementById('btn-reset-progress').addEventListener('click', function() {
+      if (!confirm('确定清除存档、战绩和解锁内容吗？此操作无法撤销。')) return;
+      try {
+        ['darkdungeon_save', 'darkdungeon_bestscore', 'darkdungeon_deaths', 'darkdungeon_streak', 'darkdungeon_unlocks', 'darkdungeon_tutorial']
+          .forEach(key => localStorage.removeItem(key));
+      } catch (e) {}
+      show();
+    });
   }
 
   function continueGame() {
