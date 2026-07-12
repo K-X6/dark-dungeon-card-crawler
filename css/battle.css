@@ -335,3 +335,9 @@ body.player-hit .battle-container {
   0%, 100% { color: var(--blue); }
   50% { color: #fff; transform: scale(1.15); }
 }
+
+.card { animation: cardSlideIn 0.3s ease; }
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
