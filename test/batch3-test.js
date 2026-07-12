@@ -31,7 +31,7 @@ Combat.startBattle([{ name:'骷髅兵', hp:20, maxHp:20, damage:6, intents:['att
 GE.setState('armor', 8);
 Combat.dealDamageToPlayer(10);
 eq(GE.getState().armor, 0, 'armor depleted');
-eq(GE.getState().hp, 78, 'hp 80→78');
+eq(GE.getState().hp, 83, 'hp 85→83');
 
 // armor stacking
 GE.setState('armor', 0);
@@ -124,7 +124,7 @@ eq(GE.getState().armor, 4, 'iron ring +4');
 GE.setState('hp', 0);
 GE.setState('relics', [{ id:'phoenix', name:'凤凰羽毛', hook:'onDeath', effect:{revivePercent:50} }]);
 Relic.triggerHook('onDeath', {});
-eq(GE.getState().hp, 40, 'phoenix revive');
+eq(GE.getState().hp, 42, 'phoenix revive 85*50%=42');
 
 console.log('');
 console.log(passed + ' passed, ' + failed + ' failed');
