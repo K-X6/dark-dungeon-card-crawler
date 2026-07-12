@@ -98,11 +98,13 @@ window.ResultUI = (() => {
     `;
     document.getElementById('btn-menu').addEventListener('click', () => {
       localStorage.removeItem('darkdungeon_save');
+      document.body.classList.remove('death-vignette');
       window.Menu.show();
     });
   }
 
   function showDeath() {
+    document.body.classList.add('death-vignette');
     const state = window.GameEngine.getState();
     const app = document.getElementById('app');
     app.innerHTML = `
