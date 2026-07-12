@@ -35,6 +35,7 @@
       window.Relic.triggerHook('onPostBattle', {});
 
       if (node.type === 'boss') {
+        for (var fi=0;fi<3;fi++){setTimeout(function(){var bx=window.innerWidth*(0.2+Math.random()*0.6);var by=window.innerHeight*(0.2+Math.random()*0.4);for(var pi=0;pi<20;pi++){var p=document.createElement('div');p.style.cssText='position:fixed;left:'+bx+'px;top:'+by+'px;width:6px;height:6px;border-radius:50%;pointer-events:none;z-index:500;animation:fireworkBurst '+(0.6+Math.random()*0.4)+'s ease-out forwards';var a=Math.PI*2*pi/20;var d=40+Math.random()*60;p.style.setProperty('--dx',Math.cos(a)*d+'px');p.style.setProperty('--dy',Math.sin(a)*d+'px');p.style.background=['#d4a017','#e74c3c','#f39c12','#fff'][Math.floor(Math.random()*4)];document.body.appendChild(p);setTimeout(function(){p.remove();},1000);}},fi*200)}
         state.bossesDefeated++;
         state.defeatedBossIds.push(node.bossId);
         
@@ -60,7 +61,7 @@
       if (idx >= 0) window.Deck.addCardToDeck(options[idx]);
 
       // 药水掉落 25%
-      if (Math.random() < 0.25) {
+      if (Math.random() < 0.35) {
         const potion = window.getRandomPotion('common');
         if (potion && state.potions.length < 3) state.potions.push(JSON.parse(JSON.stringify(potion)));
       }
