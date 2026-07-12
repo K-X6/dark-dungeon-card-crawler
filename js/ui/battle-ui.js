@@ -127,8 +127,14 @@
       else if (window.GameEngine.getState().hp > 0) sfxTurnEnd();
       var logEl = document.getElementById('enemy-action-log');
       if (logEl && logLines.length > 0) {
-        logEl.textContent = logLines.join(' | ');
-        setTimeout(function() { if (logEl) logEl.textContent = ''; }, 3000);
+        logEl.innerHTML = '';
+        var displayLog = function(idx) {
+          if (idx >= logLines.length) return;
+          if (logEl) logEl.innerHTML += (idx > 0 ? ' | ' : '') + '<span style="animation:fadeIn 0.3s ease">' + logLines[idx] + '</span>';
+          setTimeout(function(){displayLog(idx+1);}, 200);
+        };
+        if (logEl && logLines.length > 0) displayLog(0);
+        setTimeout(function() { if (logEl) logEl.innerHTML = ''; }, 3000 + logLines.length * 200);
       }
       refresh();
     });
