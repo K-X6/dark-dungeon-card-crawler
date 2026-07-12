@@ -324,3 +324,14 @@ body.player-hit .battle-container {
   50% { transform: translateX(3px); }
   75% { transform: translateX(-2px); }
 }
+
+.hp-value.flash { animation: hpFlash 0.4s ease; }
+.armor-value.flash { animation: armorFlash 0.4s ease; }
+@keyframes hpFlash {
+  0%, 100% { color: var(--danger); }
+  50% { color: #fff; transform: scale(1.15); }
+}
+@keyframes armorFlash {
+  0%, 100% { color: var(--blue); }
+  50% { color: #fff; transform: scale(1.15); }
+}

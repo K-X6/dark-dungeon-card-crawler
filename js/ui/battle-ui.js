@@ -414,7 +414,24 @@
     });
   }
 
-  function refresh() { render(window.GameEngine.getState()); }
+  var _prevHp = -1;
+  var _prevArmor = -1;
+
+  function refresh() {
+    var state = window.GameEngine.getState();
+    render(state);
+    // Flash HP/armor if changed
+    if (state.hp !== _prevHp && _prevHp >= 0) {
+      var el = document.querySelector('.hp-value');
+      if (el) { el.classList.add('flash'); setTimeout(function(){el.classList.remove('flash');},400); }
+    }
+    if (state.armor !== _prevArmor && _prevArmor >= 0) {
+      var ae = document.querySelector('.armor-value');
+      if (ae) { ae.classList.add('flash'); setTimeout(function(){ae.classList.remove('flash');},400); }
+    }
+    _prevHp = state.hp;
+    _prevArmor = state.armor;
+  }
 
   return { show: show, refresh: refresh };
 })();
