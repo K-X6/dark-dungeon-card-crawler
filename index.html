@@ -95,7 +95,7 @@
 
       // 药水掉落 25%
       var potionDrop = null;
-      if (Math.random() < 0.25) {
+      if (Math.random() < 0.35) {
         const potion = window.getRandomPotion('common');
         if (potion && state.potions.length < 3) { state.potions.push(JSON.parse(JSON.stringify(potion))); potionDrop = potion; }
       }

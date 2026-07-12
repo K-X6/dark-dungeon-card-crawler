@@ -124,7 +124,7 @@ window.MapUI = (() => {
       } while (usedNames.includes(enemy.name) && attempts < 10 && pool.length > 1);
       usedNames.push(enemy.name);
       const e = {
-        name: enemy.name, hp: enemy.hp[diffIdx], maxHp: enemy.hp[diffIdx],
+        name: enemy.name, hp: (state.difficulty==='hard'?Math.floor(enemy.hp[diffIdx]*0.95):enemy.hp[diffIdx]), maxHp: (state.difficulty==='hard'?Math.floor(enemy.hp[diffIdx]*0.95):enemy.hp[diffIdx]),
         damage: enemy.damage[diffIdx], intents: (enemy.altIntents && Math.random()<0.5 ? enemy.altIntents : enemy.intents).slice(),
         poison: 0, burn: 0, effects: {}
       };
