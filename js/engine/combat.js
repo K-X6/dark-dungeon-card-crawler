@@ -8,6 +8,42 @@ window.Combat = (() => {
   function getEnemies() { return _enemies; }
   function getTurnCount() { return _turnCount; }
 
+  function getLivingEnemies() {
+    return _enemies.filter(enemy => enemy.hp > 0);
+  }
+
+  function isBattleWon() {
+    return _enemies.length > 0 && getLivingEnemies().length === 0;
+  }
+
+  function isPlayerDead() {
+    const state = window.GameEngine.getState();
+    return !!state && state.hp <= 0;
+  }
+
+  function finishBattle(result) {
+    if (_phase === 'BATTLE_END') return true;
+    _phase = 'BATTLE_END';
+    if (result === 'victory') {
+      window.GameEngine.emit('battleVictory', {});
+    }
+    return true;
+  }
+
+  function canContinueBattle() {
+    if (_phase === 'BATTLE_END') return false;
+    if (isPlayerDead()) return !finishBattle('defeat');
+    if (isBattleWon()) return !finishBattle('victory');
+    return true;
+  }
+
+  function markEnemyDefeated(enemy) {
+    if (!enemy || enemy.hp > 0 || enemy._defeatEmitted) return;
+    enemy._defeatEmitted = true;
+    window.GameEngine.emit('enemyDefeated', { enemy });
+    window.Relic.triggerHook('onEnemyKilled', { enemy });
+  }
+
   // === 战斗流程 ===
   function startBattle(enemies) {
     const state = window.GameEngine.getState();
@@ -61,14 +97,10 @@ window.Combat = (() => {
 
   function endPlayerTurn() {
     const state = window.GameEngine.getState();
-    if (_enemies.every(enemy => enemy.hp <= 0)) {
-      _phase = 'BATTLE_END';
-      window.GameEngine.emit('battleVictory', {});
-      return;
-    }
+    if (!canContinueBattle()) return;
     decayPlayerEffects();
     triggerCursesInHand();
-    if (state.hp <= 0) { _phase = 'BATTLE_END'; return; }
+    if (!canContinueBattle()) return;
     window.Deck.discardHand();
     if (!state.retainArmor) state.armor = 0;
     state.retainArmor = false;
@@ -82,19 +114,12 @@ window.Combat = (() => {
 
     _phase = 'ENEMY_TURN';
     executeEnemyTurn();
-    // Check if all enemies are dead
-    if (_enemies.every(e => e.hp <= 0)) {
-      _phase = 'BATTLE_END';
-      window.GameEngine.emit('battleVictory', {});
-      return;
-    }
   }
 
   function executeEnemyTurn() {
     // Shuffle enemy order
-    const order = [..._enemies].sort(() => Math.random() - 0.5);
+    const order = getLivingEnemies().sort(() => Math.random() - 0.5);
     for (const enemy of order) {
-      if (enemy.hp <= 0) continue;
       if (enemy.effects && enemy.effects.stun) {
         enemy.effects.stun = false;
         window.GameEngine.emit('enemyAction', { enemy: enemy.name, action: 'stunned' });
@@ -102,17 +127,13 @@ window.Combat = (() => {
         continue;
       }
       executeEnemyIntent(enemy);
-      if (window.GameEngine.getState().hp <= 0) break;
+      if (!canContinueBattle()) break;
       decayEnemyEffects(enemy);
     }
-    if (window.GameEngine.getState().hp <= 0) { _phase = 'BATTLE_END'; return; }
+    if (!canContinueBattle()) return;
     _phase = 'DOT_PHASE';
     tickAllDot();
-    if (_enemies.every(e => e.hp <= 0)) {
-      _phase = 'BATTLE_END';
-      window.GameEngine.emit('battleVictory', {});
-      return;
-    }
+    if (!canContinueBattle()) return;
     _turnCount++;
     window.GameEngine.emit('turnStart', { turn: _turnCount });
     window.Relic.triggerHook('onTurnStart', { turn: _turnCount });
@@ -129,7 +150,7 @@ window.Combat = (() => {
     if (buffs.armorPerTurn) gainArmor(buffs.armorPerTurn);
     if (buffs.armorAndPoisonPerTurn) {
       gainArmor(buffs.armorAndPoisonPerTurn);
-      for (const enemy of _enemies) if (enemy.hp > 0) applyPoison(enemy, buffs.armorAndPoisonPerTurn);
+      for (const enemy of getLivingEnemies()) applyPoison(enemy, buffs.armorAndPoisonPerTurn);
     }
     if (buffs.regen) {
       state.hp = Math.min(state.maxHp, state.hp + buffs.regen.value);
@@ -209,10 +230,7 @@ window.Combat = (() => {
     } else if (baseIntent === 'strengthen' || baseIntent === 'strengthenAll') {
       const amount = val || 2;
       if (baseIntent === 'strengthenAll') {
-        const enemies = window.Combat.getEnemies();
-        for (const e of enemies) {
-          if (e.hp > 0) e._strengthBonus = (e._strengthBonus || 0) + amount;
-        }
+        for (const e of getLivingEnemies()) e._strengthBonus = (e._strengthBonus || 0) + amount;
       } else {
         enemy._strengthBonus = (enemy._strengthBonus || 0) + amount;
       }
@@ -252,10 +270,7 @@ window.Combat = (() => {
   }
 
   function tickAllDot() {
-    for (const enemy of _enemies) {
-      if (enemy.hp <= 0) continue;
-      tickDot(enemy);
-    }
+    for (const enemy of getLivingEnemies()) tickDot(enemy);
   }
 
   // === 伤害与护甲 ===
@@ -334,11 +349,7 @@ window.Combat = (() => {
       state._hasDealtDamage = true;
       window.Relic.triggerHook('onDamageDealt', {damage,target,targetHp:target.maxHp,firstHit});
     }
-    if (target.hp <= 0 && !target._defeatEmitted) {
-      target._defeatEmitted = true;
-      window.GameEngine.emit('enemyDefeated', { enemy: target });
-      window.Relic.triggerHook('onEnemyKilled', {enemy:target});
-    }
+    markEnemyDefeated(target);
     return damage;
   }
 
@@ -407,9 +418,7 @@ window.Combat = (() => {
         break;
       case 'aoeDamage':
         for (let hit = 0; hit < (effect.times || 1); hit++) {
-          for (const e of _enemies) {
-            if (e.hp > 0) dealDamageToEnemy(e, calcDamage(effect.value));
-          }
+          for (const e of getLivingEnemies()) dealDamageToEnemy(e, calcDamage(effect.value));
         }
         break;
       case 'armor':
@@ -419,16 +428,14 @@ window.Combat = (() => {
         if (target) applyPoison(target, effect.layers);
         break;
       case 'aoePoison':
-        for (const e of _enemies) {
-          if (e.hp > 0) applyPoison(e, effect.layers);
-        }
+        for (const e of getLivingEnemies()) applyPoison(e, effect.layers);
         break;
       case 'burn':
         if (target) applyBurn(target, effect.layers);
         break;
       case 'weak':
         if (target) applyWeak(target, effect.turns);
-        else for (const e of _enemies) if (e.hp > 0) applyWeak(e, effect.turns);
+        else for (const e of getLivingEnemies()) applyWeak(e, effect.turns);
         break;
       case 'vulnerable':
         // vulnerable on self (player) or enemy
@@ -441,7 +448,7 @@ window.Combat = (() => {
         break;
       case 'stun':
         if (target) applyStun(target);
-        else for (const e of _enemies) if (e.hp > 0) applyStun(e);
+        else for (const e of getLivingEnemies()) applyStun(e);
         break;
       case 'strength':
         state.strength += effect.value;
@@ -461,7 +468,7 @@ window.Combat = (() => {
           const chainDmg = calcDamage(effect.value);
           dealDamageToEnemy(target, chainDmg);
           // Bounce to another random enemy
-          const others = _enemies.filter(e => e !== target && e.hp > 0);
+          const others = getLivingEnemies().filter(e => e !== target);
           if (others.length > 0) {
             const bounce = others[Math.floor(Math.random() * others.length)];
             dealDamageToEnemy(bounce, calcDamage(effect.value));
@@ -520,7 +527,7 @@ window.Combat = (() => {
         if (state.hp <= 0) window.GameEngine.emit('playerDeath', {});
         break;
       case 'enemyDmgReduce': {
-        const targets = target ? [target] : _enemies.filter(e => e.hp > 0);
+        const targets = target ? [target] : getLivingEnemies();
         for (const enemy of targets) enemy._damageReduction = (enemy._damageReduction || 0) + effect.value;
         break;
       }
@@ -548,7 +555,7 @@ window.Combat = (() => {
         state.extraTurn = true;
         break;
       case 'drawPerEnemy':
-        window.Deck.drawCards((effect.count || 1) * _enemies.filter(e => e.hp > 0).length);
+        window.Deck.drawCards((effect.count || 1) * getLivingEnemies().length);
         break;
       case 'poisonDamageBuff':
         state.combatBuffs = state.combatBuffs || {};
@@ -599,6 +606,7 @@ window.Combat = (() => {
     }
     window.GameEngine.emit('cardPlayed', { card, target });
     window.Relic.triggerHook('onCardPlayed', { card, target });
+    canContinueBattle();
     return true;
   }
 
